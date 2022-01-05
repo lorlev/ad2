@@ -8,26 +8,77 @@ LoadEnv(){
 		echo "$(tput setaf 1) Don't forget to configure the .env file! $(tput sgr 0)"
 	fi
 
-#	if [ ! -d "$local_path/script_tmp" ]; then
-#		mkdir "$local_path/script_tmp"
-#	fi
-
 	## Clear spaces, tabs, empty lines & comments in config file
-	#sed "s/ *= */=/g; s/	//g; s/[#].*$//; /^$/d;" "$local_path/.env" > "$local_path/script_tmp/.build_env"
-	#source $(sed -E "s/ *= */=/g; s/	//g; s/[#].*$//; /^$/d;" "$local_path/.env")
-	#source $(sed -E -n 's/[^#]+/export &/ p' "$local_path/.env")
-
-source <(grep -v '^#' "$local_path/.env" | sed -E 's|^(.+)=(.*)$|: ${\1=\2}; export \1|g')
-
-	# Check script_tmp .env file exist
-#	if [ ! -f "$local_path/script_tmp/.build_env" ]; then
-#		echo ".build_env file not found!"
-#		exit
-#	fi
-
-	#source "$local_path/script_tmp/.build_env"
+	export $(sed "s/ *= */=/g; s/	//g; s/[#].*$//; /^$/d;" "$local_path/.env")
 }
 
-CreateMySQLConfig(){
-	printf "[client]\nuser = $MYSQL_USER_NAME\npassword = $MYSQL_PASSWORD\nhost = $MYSQL_HOST\n" > "$local_path/script_tmp/mysql-config.cnf"
+SendPushNotification(){
+	comment=$(echo $POST | jq -r '.push.changes[].new | select(.name == "'$(echo $GIT_BRANCH)'" and .type == "branch") | .target.message')
+	comment=$(echo $comment | sed ':a;s/\\n/<br>/g') #Clear New Lines
+	author=$(echo $POST | jq -r '.actor.display_name')
+	repository=$(echo $POST | jq -r '.repository.name')
+	url=$(echo $POST | jq -r '.push.changes[].new | select(.name == "'$(echo $GIT_BRANCH)'" and .type == "branch") | .target.links.html.href')
+
+	echo
+	echo "Send Push Notification "
+
+	message_result=$(curl -s -X GET \
+		-H "Content-Type: application/json" \
+		"$PUSH_URL?key=$PUSH_SECRET&repository=$repository&branch=$GIT_BRANCH&author=$author&commit=$comment&action_url=$url")
+
+	message_is_send=$(echo $message_result | jq -r '.type')
+	if [ "$message_is_send" == "error" ]; then
+		echo "Message don't send"
+		echo $message_result
+	else
+		echo "Message send OK"
+	fi
+}
+
+IncreaseVersion(){
+	echo
+	echo "Increase version"
+
+	if [ -f "$htdocs_dir/version.ini" ]; then
+		result=$(grep "$version" "$htdocs_dir/version.ini")
+		old_version=$(echo $result | cut -d'=' -f 2)
+		old_string=$(echo $old_version | sed -e 's/\.//g')
+		new_string=$(echo $((old_string + 1)) | sed 's/.\{1\}/&./g')
+		new_version="${new_string%?}"
+
+		echo "New version is: $new_version"
+		sed -i "s/$old_version/$new_version/" "$htdocs_dir/version.ini"
+	else
+		echo 'Create version file'
+		echo 'version=0' >> "$htdocs_dir/version.ini"
+	fi
+}
+
+FixGitBranch(){
+	echo "Git Btanch is: $(git rev-parse --abbrev-ref HEAD)"
+
+	if [ $(git rev-parse --abbrev-ref HEAD) != $GIT_BRANCH ]; then
+		echo
+		echo "Try to switch branch"
+
+		git checkout $GIT_BRANCH 2>&1
+		git checkout -b $GIT_BRANCH "origin/$GIT_BRANCH" 2>&1
+
+		echo "Git Btanch is: $(git rev-parse --abbrev-ref HEAD)"
+	fi
+}
+
+GetCommitSummary(){
+	echo
+	echo "Git Status:"
+	echo
+
+	git status
+}
+
+GetServerSummary(){
+	echo
+	echo "Your remote address is: ${REMOTE_ADDR}"
+	echo "Server time is: $(date)"
+	echo "Build complete"
 }

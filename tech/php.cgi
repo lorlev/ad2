@@ -1,13 +1,11 @@
 #!/bin/sh
 
-COMPOSER="{composer}"
-
 if [ "$COMPOSER" == "Y" -o "$COMPOSER" == "y" ]; then
 	echo
 	echo "Composer install"
 
-	export HOME=../
-	export COMPOSER_HOME=../.composer
+	export HOME=$root_path
+	export COMPOSER_HOME=$root_path/.composer
 
 	/usr/bin/php \
 		-d allow_url_fopen=1 \
@@ -21,7 +19,7 @@ if [ "$COMPOSER" == "Y" -o "$COMPOSER" == "y" ]; then
 			--no-ansi \
 			--optimize-autoloader \
 			--no-dev \
-		&>> ../server.logs/composer.output.log
+		&>> "$logs_dir/composer.output.log"
 
 	echo "Composer output writed in /composer.output.log"
 
@@ -29,16 +27,16 @@ if [ "$COMPOSER" == "Y" -o "$COMPOSER" == "y" ]; then
 	echo "Execute Artisan Commands"
 
 	# Clear cache
-	/usr/bin/php artisan cache:clear &>> ../server.logs/artisan.output.log
-	/usr/bin/php artisan auth:clear-resets &>> ../server.logs/artisan.output.log
+	/usr/bin/php artisan cache:clear &>> "$logs_dir/artisan.output.log"
+	/usr/bin/php artisan auth:clear-resets &>> "$logs_dir/artisan.output.log"
 
 	# Clear routes cache
-	/usr/bin/php artisan route:clear &>> ../server.logs/artisan.output.log
-	/usr/bin/php artisan route:cache &>> ../server.logs/artisan.output.log
+	/usr/bin/php artisan route:clear &>> "$logs_dir/artisan.output.log"
+	/usr/bin/php artisan route:cache &>> "$logs_dir/artisan.output.log"
 
 	# Clear config cache
-	/usr/bin/php artisan config:clear &>> ../server.logs/artisan.output.log
-	/usr/bin/php artisan config:cache &>> ../server.logs/artisan.output.log
+	/usr/bin/php artisan config:clear &>> "$logs_dir/artisan.output.log"
+	/usr/bin/php artisan config:cache &>> "$logs_dir/artisan.output.log"
 
 	echo "Artisan output writed in /artisan.output.log"
 fi
