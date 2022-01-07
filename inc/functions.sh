@@ -13,7 +13,6 @@ LoadEnv(){
 }
 
 SelfUpdate(){
-	echo
 	echo 'Checking for a New Version (Update Check)'
 	cd $local_path
 
@@ -32,7 +31,7 @@ SelfUpdate(){
 	elif [ $REMOTE = $BASE ]; then
 		echo "Local version is changed!"
 	else
-		echo "Diverged"
+		echo "Diverged need to fix"
 	fi
 
 	echo
