@@ -34,7 +34,18 @@ SelfUpdate(){
 		echo "Diverged need to fix"
 	fi
 
+	UpdateAccessStructure
+
 	echo
+}
+
+UpdateAccessStructure(){
+	chmod -R 750 $local_path
+	chown -R nginx:sftpusers $local_path
+
+	chmod 400 "$local_path/access/access-key"
+	chmod 775 "$local_path/access/access-key.pub"
+	chmod 700 "$local_path/index.cgi"
 }
 
 SendPushNotification(){
