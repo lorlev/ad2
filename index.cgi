@@ -40,7 +40,7 @@ then
 		umask 002
 
 		eval `ssh-agent`
-		ssh-add $local_path/access-key
+		ssh-add $local_path/access/access-key
 		git pull 2>&1
 		eval `ssh-agent -k`
 
