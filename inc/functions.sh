@@ -56,7 +56,7 @@ SendPushNotification(){
 	url=$(echo $POST | jq -r '.push.changes[].new | select(.name == "'$(echo $GIT_BRANCH)'" and .type == "branch") | .target.links.html.href')
 
 	echo
-	echo "Send Push Notification "
+	echo "Send Push Notification"
 
 	message_result=$(curl -s -X GET \
 		-H "Content-Type: application/json" \
