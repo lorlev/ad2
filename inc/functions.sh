@@ -12,6 +12,16 @@ LoadEnv(){
 	export $(sed "s/ *= */=/g; s/	//g; s/[#].*$//; /^$/d;" "$local_path/.env")
 }
 
+SelfUpdate(){
+	cd $local_path
+
+	if [[ `git status --porcelain` ]]; then
+		echo 'Changes'
+	else
+		echo 'No changes'
+	fi
+}
+
 SendPushNotification(){
 	comment=$(echo $POST | jq -r '.push.changes[].new | select(.name == "'$(echo $GIT_BRANCH)'" and .type == "branch") | .target.message')
 	comment=$(echo $comment | sed ':a;s/\\n/<br>/g') #Clear New Lines

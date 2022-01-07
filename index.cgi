@@ -16,6 +16,7 @@ logs_dir="$root_path/server.logs"
 source "$local_path/inc/functions.sh"
 
 LoadEnv
+SelfUpdate
 
 if
 	[ -n "$HTTP_X_HOOK_UUID" ] &&
