@@ -33,6 +33,7 @@ then
 
 		printf "Status: 200 OK"
 		echo
+		echo
 
 		cd $htdocs_dir
 
