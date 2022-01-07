@@ -13,22 +13,29 @@ LoadEnv(){
 }
 
 SelfUpdate(){
+	echo
+	echo 'Checking for a New Version (Update Check)'
 	cd $local_path
 
+	$(git remote update)
+
 	UPSTREAM=${1:-'@{u}'}
-	LOCAL=$(git rev-parse @)
+	LOCAL=$(git rev-parse '@{0}')
 	REMOTE=$(git rev-parse "$UPSTREAM")
-	BASE=$(git merge-base @ "$UPSTREAM")
+	BASE=$(git merge-base '@{0}' "$UPSTREAM")
 
 	if [ $LOCAL = $REMOTE ]; then
 		echo "Up-to-date"
 	elif [ $LOCAL = $BASE ]; then
-		echo "Need to pull"
+		echo "New version available try to update"
+		git pull
 	elif [ $REMOTE = $BASE ]; then
-		echo "Need to push"
+		echo "Local version is changed!"
 	else
 		echo "Diverged"
 	fi
+
+	echo
 }
 
 SendPushNotification(){
