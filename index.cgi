@@ -35,6 +35,7 @@ then
 		echo
 		echo
 
+		echo 'test'
 		cd $htdocs_dir
 
 		umask 002
