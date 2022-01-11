@@ -10,9 +10,6 @@ logs_dir="$root_path/server.logs"
 
 source "$local_path/inc/functions.sh"
 
-LoadEnv
-SelfUpdate
-
 if
 	[ -n "$HTTP_X_HOOK_UUID" ] &&
 	[ -n "$HTTP_X_REQUEST_UUID" ] &&
@@ -28,6 +25,9 @@ then
 		printf "Status: 200 OK"
 		echo
 		echo
+
+		LoadEnv
+		SelfUpdate
 
 		cd $htdocs_dir
 
