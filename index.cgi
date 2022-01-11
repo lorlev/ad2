@@ -3,11 +3,6 @@
 printf "Content-Type: text/plain"
 echo
 
-##
-printf "Status: 200 OK"
-echo
-echo
-
 root_path=$(dirname $(dirname $(readlink -f "$0")))
 local_path="$root_path/auto.deploy"
 htdocs_dir="$root_path/htdocs"
@@ -30,7 +25,6 @@ then
 	IS_COMMITS=$(echo $POST | jq '[.push.changes[].new | select(.name == "'$(echo $GIT_BRANCH)'" and .type == "branch")] | length')
 
 	if [ "$IS_COMMITS" -gt 0 ]; then
-
 		printf "Status: 200 OK"
 		echo
 		echo
