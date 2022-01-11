@@ -48,6 +48,15 @@ UpdateAccessStructure(){
 	chmod 700 "$local_path/index.cgi"
 }
 
+ModifyGitConfig(){
+	echo
+	echo 'Git configuration is not configured'
+	echo 'Try to modify Git configuration'
+
+	git config alias.up '!git remote update -p; git merge --ff-only @{u}'
+	git config core.filemode 'false'
+}
+
 SendPushNotification(){
 	comment=$(echo $POST | jq -r '.push.changes[].new | select(.name == "'$(echo $GIT_BRANCH)'" and .type == "branch") | .target.message')
 	comment=$(echo $comment | sed ':a;s/\\n/<br>/g') #Clear New Lines

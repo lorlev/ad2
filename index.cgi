@@ -31,11 +31,15 @@ then
 
 		cd $htdocs_dir
 
+		if [ -z $(git config alias.up) ]; then
+			ModifyGitConfig
+		fi
+
 		umask 002
 
 		eval `ssh-agent`
 		ssh-add $local_path/access/access-key
-		git pull 2>&1
+		git up 2>&1
 		eval `ssh-agent -k`
 
 		umask 0022
