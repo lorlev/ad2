@@ -50,7 +50,7 @@ then
 
 		if [ "$EXECUTE_SCRIPT" == "Y" -o "$EXECUTE_SCRIPT" == "y" ]; then
 			echo
-			echo "Execute special script"
+			echo "Execute special ($TECH) script"
 
 			if [ -f "$local_path/$TECH/execute.cgi" ]; then
 				source "$local_path/$TECH/execute.cgi"
@@ -65,7 +65,6 @@ then
 
 		GetCommitSummary
 		GetServerSummary
-
 	else
 		printf "Status: 501 Not Implemented "
 		echo

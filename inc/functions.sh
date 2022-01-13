@@ -26,7 +26,7 @@ SelfUpdate(){
 	if [ $LOCAL = $REMOTE ]; then
 		echo "Up-to-date"
 	elif [ $LOCAL = $BASE ]; then
-		echo "New version available try to update"
+		echo "New version available trying to update"
 		git pull
 	elif [ $REMOTE = $BASE ]; then
 		echo "Local version is changed!"
@@ -51,10 +51,11 @@ UpdateAccessStructure(){
 ModifyGitConfig(){
 	echo
 	echo 'Git configuration is not configured'
-	echo 'Try to modify Git configuration'
+	echo 'Trying to modify Git configuration'
 
-	git config alias.up '!git remote update -p; git merge --ff-only @{u}'
 	git config core.filemode 'false'
+	git config alias.up '!git remote update -p; git merge --ff-only @{u}'			#Pull alternative with only fast forward
+	git config alias.get_ignored 'ls-files --others --ignored --exclude-standard'	#Get all ignored files
 }
 
 SendPushNotification(){
