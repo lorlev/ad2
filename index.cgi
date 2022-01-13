@@ -38,10 +38,10 @@ then
 
 		umask 002
 
-		eval `ssh-agent`
+		eval `ssh-agent` &>/dev/null
 		ssh-add $local_path/access/access-key
 		git up 2>&1
-		eval `ssh-agent -k`
+		eval `ssh-agent -k` &>/dev/null
 
 		umask 0022
 
@@ -62,7 +62,11 @@ then
 			IncreaseVersion
 		fi
 
-		FixGitBranch
+		echo "Git Btanch is: $(git rev-parse --abbrev-ref HEAD)"
+
+		if [ $(git rev-parse --abbrev-ref HEAD) != $GIT_BRANCH ]; then
+			FixGitBranch
+		fi
 
 		GetCommitSummary
 		GetServerSummary

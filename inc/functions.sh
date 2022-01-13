@@ -55,7 +55,7 @@ ModifyGitConfig(){
 
 	git config core.filemode 'false'
 	git config alias.up '!git remote update -p; git merge --ff-only @{u}'			#Pull alternative with only fast forward
-	git config alias.get_ignored 'ls-files --others --ignored --exclude-standard'	#Get all ignored files
+	git config alias.get-ignored 'ls-files --others --ignored --exclude-standard'	#Get all ignored files
 }
 
 SendPushNotification(){
@@ -101,23 +101,18 @@ IncreaseVersion(){
 }
 
 FixGitBranch(){
+	echo
+	echo "Try to switch branch"
+
+	git checkout $GIT_BRANCH 2>&1
+	git checkout -b $GIT_BRANCH "origin/$GIT_BRANCH" 2>&1
+
 	echo "Git Btanch is: $(git rev-parse --abbrev-ref HEAD)"
-
-	if [ $(git rev-parse --abbrev-ref HEAD) != $GIT_BRANCH ]; then
-		echo
-		echo "Try to switch branch"
-
-		git checkout $GIT_BRANCH 2>&1
-		git checkout -b $GIT_BRANCH "origin/$GIT_BRANCH" 2>&1
-
-		echo "Git Btanch is: $(git rev-parse --abbrev-ref HEAD)"
-	fi
 }
 
 GetCommitSummary(){
 	echo
-	echo "Git Status:"
-	echo
+	echo "Git Status is:"
 
 	git status
 }
