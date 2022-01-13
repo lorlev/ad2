@@ -1,6 +1,6 @@
 #!/bin/sh
 
-printf "Content-Type: text/plain"
+printf "Content-Type: text/html"
 echo
 
 root_path=$(dirname $(dirname $(readlink -f "$0")))
