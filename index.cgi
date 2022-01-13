@@ -19,6 +19,8 @@ if
 then
 	POST=$( jq '.' )
 
+	LoadEnv
+
 	IS_COMMITS=$(echo $POST | jq '[.push.changes[].new | select(.name == "'$(echo $GIT_BRANCH)'" and .type == "branch")] | length')
 
 	if [ "$IS_COMMITS" -gt 0 ]; then
@@ -26,7 +28,6 @@ then
 		echo
 		echo
 
-		LoadEnv
 		SelfUpdate
 
 		cd $htdocs_dir
