@@ -40,7 +40,7 @@ then
 
 		eval `ssh-agent` &>/dev/null
 		ssh-add $local_path/access/access-key
-		git up 2>&1
+		git up
 		eval `ssh-agent -k` &>/dev/null
 
 		umask 0022
