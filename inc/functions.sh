@@ -97,6 +97,10 @@ IncreaseVersion(){
 	else
 		echo 'Create version file'
 		echo 'version=0' >> "$htdocs_dir/version.ini"
+
+		echo "Add to ignored files list"
+		echo -n "version.ini" >> "$htdocs_dir/.git/info/exclude"
+		echo
 	fi
 }
 
