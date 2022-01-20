@@ -1,6 +1,6 @@
 #!/bin/sh
 
-printf "Content-Type: text/html"
+printf "Content-Type: text/text"
 echo
 
 root_path=$(dirname $(dirname $(readlink -f "$0")))
@@ -51,7 +51,7 @@ then
 
 		if [ "$EXECUTE_SCRIPT" == "Y" -o "$EXECUTE_SCRIPT" == "y" ]; then
 			echo
-			echo "Execute special ($TECH) script"
+			OutputLog "Execute special ($TECH) script"
 
 			if [ -f "$local_path/$TECH/execute.cgi" ]; then
 				source "$local_path/$TECH/execute.cgi"
@@ -62,7 +62,7 @@ then
 			IncreaseVersion
 		fi
 
-		echo "Git Btanch is: $(git rev-parse --abbrev-ref HEAD)"
+		OutputLog "Git Btanch is: $(git rev-parse --abbrev-ref HEAD)"
 
 		if [ $(git rev-parse --abbrev-ref HEAD) != $GIT_BRANCH ]; then
 			FixGitBranch

@@ -4,8 +4,8 @@ LoadEnv(){
 	# Check .env file exist
 	if [ ! -f "$local_path/.env" ]; then
 		cp "$local_path/.env.example" "$local_path/.env"
-		echo "$(tput setaf 1) .env file was moved from the example file! $(tput sgr 0)"
-		echo "$(tput setaf 1) Don't forget to configure the .env file! $(tput sgr 0)"
+		OutputLog "$(tput setaf 1) .env file was moved from the example file! $(tput sgr 0)"
+		OutputLog "$(tput setaf 1) Don't forget to configure the .env file! $(tput sgr 0)"
 	fi
 
 	## Clear spaces, tabs, empty lines & comments in config file
@@ -13,7 +13,7 @@ LoadEnv(){
 }
 
 SelfUpdate(){
-	echo 'Checking for a New Version (Update Check)'
+	OutputLog 'Checking for a New Version (Update Check)'
 	cd $local_path
 
 	$(git remote update)
@@ -24,14 +24,14 @@ SelfUpdate(){
 	BASE=$(git merge-base '@{0}' "$UPSTREAM")
 
 	if [ $LOCAL = $REMOTE ]; then
-		echo "Up-to-date"
+		OutputLog "Up-to-date"
 	elif [ $LOCAL = $BASE ]; then
-		echo "New version available trying to update"
+		OutputLog "New version available trying to update"
 		git pull
 	elif [ $REMOTE = $BASE ]; then
-		echo "Local version is changed!"
+		OutputLog "Local version is changed!"
 	else
-		echo "Diverged need to fix"
+		OutputLog "Diverged need to fix"
 	fi
 
 	UpdateAccessStructure
@@ -50,8 +50,8 @@ UpdateAccessStructure(){
 
 ModifyGitConfig(){
 	echo
-	echo 'Git configuration is not configured'
-	echo 'Trying to modify Git configuration'
+	OutputLog 'Git configuration is not configured'
+	OutputLog 'Trying to modify Git configuration'
 
 	git config core.filemode 'false'
 	git config alias.up '!git remote update -p; git merge --ff-only @{u}'			#Pull alternative with only fast forward
@@ -66,7 +66,7 @@ SendPushNotification(){
 	url=$(echo $POST | jq -r '.push.changes[].new | select(.name == "'$(echo $GIT_BRANCH)'" and .type == "branch") | .target.links.html.href')
 
 	echo
-	echo "Send Push Notification"
+	OutputLog "Send Push Notification"
 
 	message_result=$(curl -s -X GET \
 		-H "Content-Type: application/json" \
@@ -74,16 +74,16 @@ SendPushNotification(){
 
 	message_is_send=$(echo $message_result | jq -r '.type')
 	if [ "$message_is_send" == "error" ]; then
-		echo "Message don't send"
-		echo $message_result
+		OutputLog "Message don't send"
+		OutputLog $message_result
 	else
-		echo "Message send OK"
+		OutputLog "Message send OK"
 	fi
 }
 
 IncreaseVersion(){
 	echo
-	echo "Increase version"
+	OutputLog "Increase version"
 
 	if [ -f "$htdocs_dir/version.ini" ]; then
 		result=$(grep "$version" "$htdocs_dir/version.ini")
@@ -92,13 +92,13 @@ IncreaseVersion(){
 		new_string=$(echo $((old_string + 1)) | sed 's/.\{1\}/&./g')
 		new_version="${new_string%?}"
 
-		echo "New version is: $new_version"
+		OutputLog "New version is: $new_version"
 		sed -i "s/$old_version/$new_version/" "$htdocs_dir/version.ini"
 	else
-		echo 'Create version file'
+		OutputLog 'Create version file'
 		echo 'version=0' >> "$htdocs_dir/version.ini"
 
-		echo "Add to ignored files list"
+		OutputLog "Add to ignored files list"
 		echo -n "version.ini" >> "$htdocs_dir/.git/info/exclude"
 		echo
 	fi
@@ -106,24 +106,37 @@ IncreaseVersion(){
 
 FixGitBranch(){
 	echo
-	echo "Try to switch branch"
+	OutputLog "Try to switch branch"
 
 	git checkout $GIT_BRANCH 2>&1
 	git checkout -b $GIT_BRANCH "origin/$GIT_BRANCH" 2>&1
 
-	echo "Git Btanch is: $(git rev-parse --abbrev-ref HEAD)"
+	OutputLog "Git Btanch is: $(git rev-parse --abbrev-ref HEAD)"
 }
 
 GetCommitSummary(){
 	echo
-	echo "Git Status is:"
+	OutputLog "Git Status is:"
 
 	git status
 }
 
 GetServerSummary(){
 	echo
-	echo "Your remote address is: ${REMOTE_ADDR}"
-	echo "Server time is: $(date)"
-	echo "Build complete"
+	OutputLog "Your remote address is: ${REMOTE_ADDR}"
+	OutputLog "Server time is: $(date)"
+	OutputLog "Build complete"
 }
+
+OutputLog(){
+	message=$1
+
+	echo -e "$message"
+
+	if [ ! -d "$logs_dir" ]; then
+		mkdir -p "$logs_dir"
+	fi
+
+	echo "`date "+%d/%b/%Y:%H:%M:%S %Z"` ""$message" >> "$logs_dir/auto.deploy.log"
+}
+
