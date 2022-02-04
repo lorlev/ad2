@@ -118,14 +118,18 @@ GetCommitSummary(){
 	echo
 	OutputLog "Git Status is:"
 
-	git status
+	printf -v status_out '%s\n' "$(git -c color.ui=always status)"
+	OutputLog "$status_out"
 }
 
 GetServerSummary(){
 	echo
+
 	OutputLog "Your remote address is: ${REMOTE_ADDR}"
 	OutputLog "Server time is: $(date)"
 	OutputLog "Build complete"
+
+	OutputLog "--------------------------------------"
 }
 
 OutputLog(){
