@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ "$GUNICORN" == "Y" -o "$GUNICORN" == "y" ]; then
 	echo

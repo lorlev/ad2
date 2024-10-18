@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 printf "Content-Type: text/text"
 echo
@@ -8,7 +8,7 @@ local_path="$root_path/auto.deploy"
 htdocs_dir="$root_path/htdocs"
 logs_dir="$root_path/server.logs"
 
-source "$local_path/inc/functions.sh"
+source "$local_path/inc/functions.cgi"
 
 if
 	[ -n "$HTTP_X_HOOK_UUID" ] &&
