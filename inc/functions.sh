@@ -53,6 +53,9 @@ ModifyGitConfig(){
 	OutputLog 'Git configuration is not configured'
 	OutputLog 'Trying to modify Git configuration'
 
+	#git config alias.get-ignored 'ls-files --others --ignored --exclude-standard'
+	#git get-ignored | tr '\n' '\0' | xargs -0r -n1 -I{} cp --parents "{}" ../some_destination/
+
 	git config core.filemode 'false'
 	git config alias.up '!git remote update -p; git merge --ff-only @{u}'			#Pull alternative with only fast forward
 	git config alias.get-ignored 'ls-files --others --ignored --exclude-standard'	#Get all ignored files
