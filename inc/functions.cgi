@@ -12,9 +12,9 @@ LoadEnv(){
 	export $(sed "s/ *= */=/g; s/	//g; s/[#].*$//; /^$/d;" "$local_path/.env")
 }
 
-SelfUpdate(){
-	OutputLog 'Checking for a New Version (Update Check)'
-	cd $local_path
+SelfUpdate() {
+	OutputLog 'Checking for a new version (Update Check)'
+	cd "$local_path"
 
 	git remote update > /dev/null 2>&1
 
@@ -24,22 +24,22 @@ SelfUpdate(){
 	BASE=$(git merge-base '@{0}' "$UPSTREAM")
 
 	if [ "$LOCAL" = "$REMOTE" ]; then
-		OutputLog "Up-to-date"
+		OutputLog "Already up-to-date."
 	elif [ "$LOCAL" = "$BASE" ]; then
 		OutputLog "New version available. Attempting to update..."
 
 		ERROR_FILE=$(mktemp)
 
-		if git pull > /dev/null 2>>$ERROR_FILE; then
-			OutputLog "Update sucess!"
+		if git pull > /dev/null 2>>"$ERROR_FILE"; then
+			OutputLog "Update successful!"
 		else
-			OutputLog "Fail to update!"
+			OutputLog "Failed to update."
 			OutputLog "$(cat "$ERROR_FILE")"
 		fi
 
-		rm -f $ERROR_FILE
+		rm -f "$ERROR_FILE"
 	elif [ "$REMOTE" = "$BASE" ]; then
-		OutputLog "Local version has uncommitted changes!"
+		OutputLog "Local version has uncommitted changes."
 	else
 		OutputLog "Branches have diverged. Manual intervention needed."
 	fi
@@ -48,6 +48,7 @@ SelfUpdate(){
 
 	echo
 }
+
 
 UpdateAccessStructure(){
 	chmod -R 750 $local_path
