@@ -1,4 +1,5 @@
 access
 .env
+.DS_Store
 chmod.sh
 sftp-config.json
