@@ -16,22 +16,32 @@ SelfUpdate(){
 	OutputLog 'Checking for a New Version (Update Check)'
 	cd $local_path
 
-	$(git remote update)
+	git remote update > /dev/null 2>&1
 
 	UPSTREAM=${1:-'@{u}'}
 	LOCAL=$(git rev-parse '@{0}')
 	REMOTE=$(git rev-parse "$UPSTREAM")
 	BASE=$(git merge-base '@{0}' "$UPSTREAM")
 
-	if [ $LOCAL = $REMOTE ]; then
+	if [ "$LOCAL" = "$REMOTE" ]; then
 		OutputLog "Up-to-date"
-	elif [ $LOCAL = $BASE ]; then
-		OutputLog "New version available trying to update"
-		git pull
-	elif [ $REMOTE = $BASE ]; then
-		OutputLog "Local version is changed!"
+	elif [ "$LOCAL" = "$BASE" ]; then
+		OutputLog "New version available. Attempting to update..."
+
+		ERROR_FILE=$(mktemp)
+
+		if git pull > /dev/null 2>>$ERROR_FILE; then
+			OutputLog "Update sucess!"
+		else
+			OutputLog "Fail to update!"
+			OutputLog "$(cat "$ERROR_FILE")"
+		fi
+
+		rm -f $ERROR_FILE
+	elif [ "$REMOTE" = "$BASE" ]; then
+		OutputLog "Local version has uncommitted changes!"
 	else
-		OutputLog "Diverged need to fix"
+		OutputLog "Branches have diverged. Manual intervention needed."
 	fi
 
 	UpdateAccessStructure

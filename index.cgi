@@ -10,14 +10,23 @@ logs_dir="$root_path/server.logs"
 
 source "$local_path/inc/functions.cgi"
 
-if
-	[ -n "$HTTP_X_HOOK_UUID" ] &&
-	[ -n "$HTTP_X_REQUEST_UUID" ] &&
-	[ "$HTTP_X_EVENT_KEY" = "repo:push" ] &&
+SelfUpdate
+
+if {
+	# Common checks for all platforms
 	[ "$HTTP_CONTENT_TYPE" = "application/json" ] &&
 	[ "$REQUEST_METHOD" = "POST" ]
-then
-	POST=$( jq '.' )
+} && {
+	# GitLab check
+	[ -n "$HTTP_X_GITLAB_EVENT" ] && [ "$HTTP_X_GITLAB_EVENT" = "Push Hook" ]
+} || {
+	# Bitbucket check
+	[ -n "$HTTP_X_EVENT_KEY" ] && [ "$HTTP_X_EVENT_KEY" = "repo:push" ]
+} || {
+	# GitHub check
+	[ -n "$HTTP_X_GITHUB_EVENT" ] && [ "$HTTP_X_GITHUB_EVENT" = "issues" ]
+}; then
+	POST=$(jq '.' < /dev/stdin)
 
 	LoadEnv
 
@@ -27,8 +36,6 @@ then
 		printf "Status: 200 OK"
 		echo
 		echo
-
-		SelfUpdate
 
 		cd $htdocs_dir
 
