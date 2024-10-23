@@ -52,8 +52,6 @@ SelfUpdate() {
 	echo
 }
 
-
-
 UpdateAccessStructure(){
 	chmod -R 750 $local_path
 	chown -R nginx:sftpusers $local_path
@@ -61,6 +59,30 @@ UpdateAccessStructure(){
 	chmod 400 "$local_path/access/access-key"
 	chmod 775 "$local_path/access/access-key.pub"
 	chmod 700 "$local_path/index.cgi"
+}
+
+GetCommitsCount() {
+	local post_payload=$1
+	local platform=$2
+	local branch=$3
+
+	case $platform in
+		"gitlab")
+			# GitLab logic
+			echo $(echo $post_payload | jq --arg branch "$branch" '[.commits[] | select(.id != null)] | length')
+			;;
+		"bitbucket")
+			# Bitbucket logic
+			echo $(echo $post_payload | jq --arg branch "$branch" '[.push.changes[].new | select(.name == $branch and .type == "branch")] | length')
+			;;
+		"github")
+			# GitHub logic
+			echo $(echo $post_payload | jq --arg branch "$branch" '[.commits[] | select(.distinct == true and (.message | length) > 0)] | length')
+			;;
+		*)
+			echo 0
+			;;
+	esac
 }
 
 ModifyGitConfig(){
@@ -76,26 +98,61 @@ ModifyGitConfig(){
 	git config alias.get-ignored 'ls-files --others --ignored --exclude-standard'	#Get all ignored files
 }
 
-SendPushNotification(){
-	comment=$(echo $POST | jq -r '.push.changes[].new | select(.name == "'$(echo $GIT_BRANCH)'" and .type == "branch") | .target.message')
-	comment=$(echo $comment | sed ':a;s/\\n/<br>/g') #Clear New Lines
-	author=$(echo $POST | jq -r '.actor.display_name')
-	repository=$(echo $POST | jq -r '.repository.name')
-	url=$(echo $POST | jq -r '.push.changes[].new | select(.name == "'$(echo $GIT_BRANCH)'" and .type == "branch") | .target.links.html.href')
+SendPushNotification() {
+	comment=""
+	author=""
+	repository=""
+	url=""
+
+	case "$platform" in
+		"bitbucket")
+			# Bitbucket-specific logic
+			comment=$(echo $POST | jq -r '.push.changes[].new | select(.name == "'$GIT_BRANCH'" and .type == "branch") | .target.message')
+			author=$(echo $POST | jq -r '.actor.display_name')
+			repository=$(echo $POST | jq -r '.repository.name')
+			url=$(echo $POST | jq -r '.push.changes[].new | select(.name == "'$GIT_BRANCH'" and .type == "branch") | .target.links.html.href')
+			;;
+		
+		"github")
+			# GitHub-specific logic
+			comment=$(echo $POST | jq -r '.head_commit.message')
+			author=$(echo $POST | jq -r '.pusher.name')
+			repository=$(echo $POST | jq -r '.repository.name')
+			url=$(echo $POST | jq -r '.head_commit.url')
+			;;
+		
+		"gitlab")
+			# GitLab-specific logic
+			comment=$(echo $POST | jq -r '.commits[0].message')
+			author=$(echo $POST | jq -r '.user_name')
+			repository=$(echo $POST | jq -r '.repository.name')
+			url=$(echo $POST | jq -r '.commits[0].url')
+			;;
+		
+		*)
+			OutputLog "Unknown platform: $platform"
+			return
+			;;
+	esac
+
+	# Clear New Lines in the comment
+	comment=$(echo $comment | sed ':a;s/\\n/<br>/g')
 
 	echo
 	OutputLog "Send Push Notification"
 
+	# Send the push notification
 	message_result=$(curl -s -X GET \
 		-H "Content-Type: application/json" \
 		"$PUSH_URL?key=$PUSH_SECRET&repository=$repository&branch=$GIT_BRANCH&author=$author&commit=$comment&action_url=$url")
 
+	# Check if the message was sent successfully
 	message_is_send=$(echo $message_result | jq -r '.type')
 	if [ "$message_is_send" == "error" ]; then
-		OutputLog "Message don't send"
-		OutputLog $message_result
+		OutputLog "Message not sent"
+		OutputLog "$message_result"
 	else
-		OutputLog "Message send OK"
+		OutputLog "Message sent successfully"
 	fi
 }
 
@@ -143,6 +200,7 @@ GetCommitSummary(){
 GetServerSummary(){
 	echo
 
+	OutputLog "Your platform is: ${platform}"
 	OutputLog "Your remote address is: ${REMOTE_ADDR}"
 	OutputLog "Server time is: $(date)"
 	OutputLog "Build complete"

@@ -11,31 +11,37 @@ logs_dir="$root_path/server.logs"
 source "$local_path/inc/functions.cgi"
 
 if {
-	# Common checks for all platforms
 	[ "$HTTP_CONTENT_TYPE" = "application/json" ] && 
 	[ "$REQUEST_METHOD" = "POST" ]
-} && {
-	# GitLab check
-	[ -n "$HTTP_X_GITLAB_EVENT" ] && [ "$HTTP_X_GITLAB_EVENT" = "Push Hook" ]
-} || {
-	# Bitbucket check
-	[ -n "$HTTP_X_EVENT_KEY" ] && [ "$HTTP_X_EVENT_KEY" = "repo:push" ]
-} || {
-	# GitHub check
-	[ -n "$HTTP_X_GITHUB_EVENT" ] && [ "$HTTP_X_GITHUB_EVENT" = "push" ]
 }; then
-	POST=$(jq '.' < /dev/stdin)
+	# Detect platform and branch/commits extraction logic
+	if [ -n "$HTTP_X_GITLAB_EVENT" ] && [ "$HTTP_X_GITLAB_EVENT" = "Push Hook" ]; then
+		platform="gitlab"
+	elif [ -n "$HTTP_X_EVENT_KEY" ] && [ "$HTTP_X_EVENT_KEY" = "repo:push" ]; then
+		platform="bitbucket"
+	elif [ -n "$HTTP_X_GITHUB_EVENT" ] && [ "$HTTP_X_GITHUB_EVENT" = "push" ]; then
+		platform="github"
+	else
+		printf "Status: 501 Not Implemented "
+		echo
+		echo
 
+		echo "Unsupported platform"
+
+		SelfUpdate
+	fi
+
+	POST=$(jq '.' < /dev/stdin)
 	LoadEnv
 
-	IS_COMMITS=$(echo $POST | jq '[.push.changes[].new | select(.name == "'$(echo $GIT_BRANCH)'" and .type == "branch")] | length')
+	# Get number of commits using the function
+	IS_COMMITS=$(GetCommitsCount "$POST" "$platform" "$GIT_BRANCH")
 
 	if [ "$IS_COMMITS" -gt 0 ]; then
 		printf "Status: 200 OK"
 		echo
 		echo
 
-		SelfUpdate
 		cd $htdocs_dir
 
 		if [ -z $(git config alias.up) ]; then
@@ -76,6 +82,7 @@ if {
 
 		GetCommitSummary
 		GetServerSummary
+		SelfUpdate
 	else
 		printf "Status: 501 Not Implemented "
 		echo
