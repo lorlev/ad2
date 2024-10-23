@@ -12,7 +12,7 @@ source "$local_path/inc/functions.cgi"
 
 if {
 	# Common checks for all platforms
-	[ "$HTTP_CONTENT_TYPE" = "application/json" ] &&
+	[ "$HTTP_CONTENT_TYPE" = "application/json" ] && 
 	[ "$REQUEST_METHOD" = "POST" ]
 } && {
 	# GitLab check
@@ -22,7 +22,7 @@ if {
 	[ -n "$HTTP_X_EVENT_KEY" ] && [ "$HTTP_X_EVENT_KEY" = "repo:push" ]
 } || {
 	# GitHub check
-	[ -n "$HTTP_X_GITHUB_EVENT" ] && [ "$HTTP_X_GITHUB_EVENT" = "issues" ]
+	[ -n "$HTTP_X_GITHUB_EVENT" ] && [ "$HTTP_X_GITHUB_EVENT" = "push" ]
 }; then
 	POST=$(jq '.' < /dev/stdin)
 
@@ -68,7 +68,7 @@ if {
 			IncreaseVersion
 		fi
 
-		OutputLog "Git Btanch is: $(git rev-parse --abbrev-ref HEAD)"
+		OutputLog "Git Branch is: $(git rev-parse --abbrev-ref HEAD)"
 
 		if [ $(git rev-parse --abbrev-ref HEAD) != $GIT_BRANCH ]; then
 			FixGitBranch
