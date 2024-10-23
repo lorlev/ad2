@@ -30,24 +30,28 @@ SelfUpdate() {
 
 		ERROR_FILE=$(mktemp)
 
-		if git pull > /dev/null 2>>"$ERROR_FILE"; then
-			OutputLog "Update successful!"
-		else
-			OutputLog "Failed to update."
+		# Ignore any errors from git pull
+		git pull > /dev/null 2>>"$ERROR_FILE" || true
+
+		if [ -s "$ERROR_FILE" ]; then
+			OutputLog "Failed to update, but continuing execution..."
 			OutputLog "$(cat "$ERROR_FILE")"
+		else
+			OutputLog "Update successful!"
 		fi
 
 		rm -f "$ERROR_FILE"
 	elif [ "$REMOTE" = "$BASE" ]; then
-		OutputLog "Local version has uncommitted changes."
+		OutputLog "Local version has uncommitted changes. Ignoring and continuing..."
 	else
-		OutputLog "Branches have diverged. Manual intervention needed."
+		OutputLog "Branches have diverged. Manual intervention needed, but continuing..."
 	fi
 
 	UpdateAccessStructure
 
 	echo
 }
+
 
 
 UpdateAccessStructure(){

@@ -10,8 +10,6 @@ logs_dir="$root_path/server.logs"
 
 source "$local_path/inc/functions.cgi"
 
-SelfUpdate
-
 if {
 	# Common checks for all platforms
 	[ "$HTTP_CONTENT_TYPE" = "application/json" ] &&
@@ -37,6 +35,7 @@ if {
 		echo
 		echo
 
+		SelfUpdate
 		cd $htdocs_dir
 
 		if [ -z $(git config alias.up) ]; then
@@ -83,6 +82,8 @@ if {
 		echo
 
 		echo "Build skipped"
+
+		SelfUpdate
 	fi
 else
 	printf "Status: 502 Bad Gateway"
