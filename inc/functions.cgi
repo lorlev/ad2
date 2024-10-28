@@ -195,6 +195,7 @@ GetCommitSummary(){
 
 	printf -v status_out '%s\n' "$(git -c color.ui=always status)"
 	OutputLog "$status_out"
+	OutputLog "Git commit hash: $commit_hash"
 }
 
 GetServerSummary(){
@@ -219,4 +220,3 @@ OutputLog(){
 
 	echo "`date "+%d/%b/%Y:%H:%M:%S %Z"` ""$message" >> "$logs_dir/auto.deploy.log"
 }
-
