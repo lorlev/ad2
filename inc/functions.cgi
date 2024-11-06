@@ -4,8 +4,10 @@ LoadEnv(){
 	# Check .env file exist
 	if [ ! -f "$local_path/.env" ]; then
 		cp "$local_path/.env.example" "$local_path/.env"
-		OutputLog "$(tput setaf 1) .env file was moved from the example file! $(tput sgr 0)"
-		OutputLog "$(tput setaf 1) Don't forget to configure the .env file! $(tput sgr 0)"
+
+		OutputLog ".env file was moved from the example file!"
+		OutputLog "Don't forget to configure the .env file!"
+		OutputLog ""
 	fi
 
 	## Clear spaces, tabs, empty lines & comments in config file
@@ -49,12 +51,12 @@ SelfUpdate() {
 
 	UpdateAccessStructure
 
-	echo
+	OutputLog ""
 }
 
 UpdateAccessStructure(){
 	chmod -R 750 $local_path
-	chown -R nginx:sftpusers $local_path
+	chown -R www-data:ftpusers $local_path
 
 	chmod 400 "$local_path/access/access-key"
 	chmod 775 "$local_path/access/access-key.pub"
@@ -86,16 +88,19 @@ GetCommitsCount() {
 }
 
 ModifyGitConfig(){
-	echo
-	OutputLog 'Git configuration is not configured'
-	OutputLog 'Trying to modify Git configuration'
+	OutputLog ""
+	OutputLog 'Git configuration is not configured globally'
+	OutputLog 'Trying to modify local Git configuration'
 
-	#git config alias.get-ignored 'ls-files --others --ignored --exclude-standard'
-	#git get-ignored | tr '\n' '\0' | xargs -0r -n1 -I{} cp --parents "{}" ../some_destination/
-
+	# Set core.fileMode to ignore file permission changes
 	git config core.filemode 'false'
-	git config alias.up '!git remote update -p; git merge --ff-only @{u}'			#Pull alternative with only fast forward
-	git config alias.get-ignored 'ls-files --others --ignored --exclude-standard'	#Get all ignored files
+
+	# Set a custom alias "up" for updating and merging with only fast-forward
+	git config alias.up '!git remote update -p; git merge --ff-only @{u}'
+
+	# Set a custom alias "get-ignored" to list all ignored files
+	git config alias.get-ignored 'ls-files --others --ignored --exclude-standard'
+	OutputLog ""
 }
 
 SendPushNotification() {
@@ -138,7 +143,7 @@ SendPushNotification() {
 	# Clear New Lines in the comment
 	comment=$(echo $comment | sed ':a;s/\\n/<br>/g')
 
-	echo
+	OutputLog ""
 	OutputLog "Send Push Notification"
 
 	# Send the push notification
@@ -157,7 +162,7 @@ SendPushNotification() {
 }
 
 IncreaseVersion(){
-	echo
+	OutputLog ""
 	OutputLog "Increase version"
 
 	if [ -f "$htdocs_dir/version.ini" ]; then
@@ -175,38 +180,78 @@ IncreaseVersion(){
 
 		OutputLog "Add to ignored files list"
 		echo -n "version.ini" >> "$htdocs_dir/.git/info/exclude"
-		echo
+		OutputLog ""
 	fi
 }
 
-FixGitBranch(){
-	echo
+CloneRepository(){
+	umask 002
+
+	eval `ssh-agent` &>/dev/null
+
+	OutputLog "Adding SSH key..."
+	if ssh-add "$local_path/access/access-key"; then
+		OutputLog "SSH key added successfully."
+	else
+		OutputLog "Failed to add SSH key."
+	fi
+
+	# Check if the build directory exists, remove if it does, and log the action
+	if [ -d "$build_dir" ]; then
+		OutputLog ""
+		OutputLog "Directory $build_dir exists. Removing existing directory..."
+		rm -rf "$build_dir"
+		OutputLog "Existing directory removed."
+		OutputLog ""
+	fi
+
+	# Clone the repository and echo result
+	OutputLog "Cloning repository from $repo_url to $build_dir"
+	if git clone "$repo_url" "$build_dir"; then
+		OutputLog "Repository cloned successfully."
+
+		chown -R www-data:ftpusers "$build_dir"
+		chmod -R 775 "$build_dir"
+	else
+		OutputLog "Git clone failed."
+	fi
+
+	eval `ssh-agent -k` &>/dev/null
+
+	umask 0022
+}
+
+
+CheckoutToBranch(){
 	OutputLog "Try to switch branch"
 
-	git checkout $GIT_BRANCH 2>&1
 	git checkout -b $GIT_BRANCH "origin/$GIT_BRANCH" 2>&1
 
 	OutputLog "Git Btanch is: $(git rev-parse --abbrev-ref HEAD)"
+	OutputLog ""
 }
 
 GetCommitSummary(){
-	echo
 	OutputLog "Git Status is:"
 
 	printf -v status_out '%s\n' "$(git -c color.ui=always status)"
 	OutputLog "$status_out"
-	OutputLog "Git commit hash: $commit_hash"
 }
 
 GetServerSummary(){
-	echo
+	OutputLog ""
 
+	OutputLog "Git commit hash: $commit_hash"
 	OutputLog "Your platform is: ${platform}"
 	OutputLog "Your remote address is: ${REMOTE_ADDR}"
 	OutputLog "Server time is: $(date)"
+	OutputLog ""
+
 	OutputLog "Build complete"
 
 	OutputLog "--------------------------------------"
+	OutputLog ""
+
 }
 
 OutputLog(){

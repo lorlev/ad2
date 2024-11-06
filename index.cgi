@@ -20,7 +20,7 @@ if {
 	if [ -n "$HTTP_X_GITLAB_EVENT" ] && [ "$HTTP_X_GITLAB_EVENT" = "Push Hook" ]; then
 		platform="gitlab"
 		commit_hash=$(echo "$POST" | jq -r '.after')
-		repo_url=$(echo "$POST" | jq -r '.repository.ssh_url')
+		repo_url=$(echo "$POST" | jq -r '.repository.git_ssh_url')
 	elif [ -n "$HTTP_X_EVENT_KEY" ] && [ "$HTTP_X_EVENT_KEY" = "repo:push" ]; then
 		platform="bitbucket"
 		commit_hash=$(echo "$POST" | jq -r '.push.changes[0].new.target.hash')
@@ -39,62 +39,68 @@ if {
 		SelfUpdate
 	fi
 
-	LoadEnv
-
 	IS_COMMITS=$(GetCommitsCount "$POST" "$platform" "$GIT_BRANCH")
 
 	if [ "$IS_COMMITS" -gt 0 ]; then
+		build_dir="$root_path/builds/$commit_hash"
+
 		printf "Status: 200 OK"
 		echo
 		echo
 
-		# Create the build directory
-		build_dir="$root_path/builds/$commit_hash"
-		mkdir -p "$build_dir"
+		LoadEnv
+
+		CloneRepository
+
 		cd $build_dir
 
-		if [ -z $(git config alias.up) ]; then
+		if [ -z "$(git config alias.up)" ] || [ "$(git config core.fileMode)" != "false" ]; then
 			ModifyGitConfig
 		fi
-
-		umask 002
-
-		eval `ssh-agent` &>/dev/null
-		ssh-add $local_path/access/access-key
-		git clone "$repo_url" "$build_dir"
-		eval `ssh-agent -k` &>/dev/null
-
-		umask 0022
 
 		OutputLog "Git Branch is: $(git rev-parse --abbrev-ref HEAD)"
 
 		if [ $(git rev-parse --abbrev-ref HEAD) != $GIT_BRANCH ]; then
-			FixGitBranch
+			CheckoutToBranch
 		fi
 
 		if [ -n "$STATIC_DIRS" ]; then
-			for dir in $STATIC_DIRS; do
+			echo "There are static dirs: $STATIC_DIRS"
+
+			IFS=',' read -ra DIRS <<< "$STATIC_DIRS"
+			for dir in "${DIRS[@]}"; do
 				if [ ! -d "$root_path/static/$dir" ]; then
 					mkdir -p "$root_path/static/$dir"
+					OutputLog "Created Static dir: $dir"
 				fi
+
+				# Remove any existing symlink and create a new one
+				rm -f "$build_dir/$dir"
 				ln -s "$root_path/static/$dir" "$build_dir/$dir"
+				OutputLog "Created symlink for: $dir"
 			done
+			OutputLog ""
 		fi
 
-		rm -rf "$root_path/htdocs" || true
-		ln -s "$build_dir/$commit_hash" "$root_path/htdocs"
+		if [ -L "$root_path/htdocs" ]; then
+			OutputLog "Removing existing symlink $root_path/htdocs"
+			rm -f "$root_path/htdocs" || OutputLog "Failed to remove symlink"
+		elif [ -d "$root_path/htdocs" ]; then
+			OutputLog "Removing existing directory $root_path/htdocs."
+			rm -rf "$root_path/htdocs" || OutputLog "Failed to remove directory"
+		fi
 
-		chmod -R 775 "$build_dir/$commit_hash"
-		chmod -R 775 "$root_path/htdocs"
+		OutputLog "Creating new symlink for $root_path/htdocs"
+		ln -s "$build_dir" "$root_path/htdocs" || OutputLog "Failed to create symlink"
 
-		chown -R nginx:ftpusers "$build_dir/$commit_hash"
-		chown -R nginx:ftpusers "$root_path/htdocs"
+		chmod -R 775 "$build_dir"
+		chown -R www-data:ftpusers "$build_dir"
 
 		fourth_hash=$(git rev-list --skip=3 -n 1 "$commit_hash")
 		if [[ "$commit_hash" != "$fourth_hash" ]]; then
 			echo
-			OutputLog "Clean Up Old builds: $fourth_hash"
-			rm -rf "$build_dir/$fourth_hash" || true
+			OutputLog "Clean Up old build: $fourth_hash"
+			rm -rf "$root_path/builds/$fourth_hash" || OutputLog "Failed to remove old build"
 		fi
 
 		if [ "$EXECUTE_SCRIPT" == "Y" -o "$EXECUTE_SCRIPT" == "y" ]; then
