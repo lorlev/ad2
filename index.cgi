@@ -122,6 +122,22 @@ if {
 			OutputLog ""
 		fi
 
+		if [ -n "$STATIC_FILES" ]; then
+			echo "There are static files: $STATIC_FILES"
+
+			IFS=',' read -ra FILES <<< "$STATIC_FILES"
+			for file in "${FILES[@]}"; do
+				if [ -f "$root_path/static/$file" ]; then
+					# Remove any existing symlink and create a new one
+					rm -f "$build_dir/$file"
+					ln -s "../../static/$file" "$build_dir/$file"
+					OutputLog "Created symlink for: $file"
+				fi
+
+			done
+			OutputLog ""
+		fi
+
 		GetCommitSummary
 		GetServerSummary
 		SelfUpdate
