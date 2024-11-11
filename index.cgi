@@ -64,38 +64,6 @@ if {
 			CheckoutToBranch
 		fi
 
-		if [ -n "$STATIC_DIRS" ]; then
-			echo "There are static dirs: $STATIC_DIRS"
-
-			IFS=',' read -ra DIRS <<< "$STATIC_DIRS"
-			for dir in "${DIRS[@]}"; do
-				if [ ! -d "$root_path/static/$dir" ]; then
-					mkdir -p "$root_path/static/$dir"
-					OutputLog "Created Static dir: $dir"
-				fi
-
-				# Remove any existing symlink and create a new one
-				rm -f "$build_dir/$dir"
-				ln -s "$root_path/static/$dir" "$build_dir/$dir"
-				OutputLog "Created symlink for: $dir"
-			done
-			OutputLog ""
-		fi
-
-		if [ -L "$root_path/htdocs" ]; then
-			OutputLog "Removing existing symlink $root_path/htdocs"
-			rm -f "$root_path/htdocs" || OutputLog "Failed to remove symlink"
-		elif [ -d "$root_path/htdocs" ]; then
-			OutputLog "Removing existing directory $root_path/htdocs."
-			rm -rf "$root_path/htdocs" || OutputLog "Failed to remove directory"
-		fi
-
-		OutputLog "Creating new symlink for $root_path/htdocs"
-		ln -s "$build_dir" "$root_path/htdocs" || OutputLog "Failed to create symlink"
-
-		chmod -R 775 "$build_dir"
-		chown -R www-data:ftpusers "$build_dir"
-
 		fourth_hash=$(git rev-list --skip=3 -n 1 "$commit_hash")
 		if [[ "$commit_hash" != "$fourth_hash" ]]; then
 			echo
@@ -118,6 +86,40 @@ if {
 
 		if [ "$PUSH" == "Y" -o "$PUSH" == "y" ]; then
 			SendPushNotification
+		fi
+
+		chmod -R 775 "$build_dir"
+		chown -R www-data:ftpusers "$build_dir"
+
+		cd "$root_path"
+
+		if [ -L "$htdocs_dir" ]; then
+			OutputLog "Removing existing symlink htdocs"
+			rm -f "$htdocs_dir" || OutputLog "Failed to remove symlink"
+		elif [ -d "$htdocs_dir" ]; then
+			OutputLog "Removing existing directory htdocs."
+			rm -rf "$htdocs_dir" || OutputLog "Failed to remove directory"
+		fi
+
+		OutputLog "Creating new relative symlink for htdocs"
+		ln -s "builds/$commit_hash" $htdocs_dir || OutputLog "Failed to create symlink"
+
+		if [ -n "$STATIC_DIRS" ]; then
+			echo "There are static dirs: $STATIC_DIRS"
+
+			IFS=',' read -ra DIRS <<< "$STATIC_DIRS"
+			for dir in "${DIRS[@]}"; do
+				if [ ! -d "$root_path/static/$dir" ]; then
+					mkdir -p "$root_path/static/$dir"
+					OutputLog "Created Static dir: $dir"
+				fi
+
+				# Remove any existing symlink and create a new one
+				rm -f "$build_dir/$dir"
+				ln -s "../../static/$dir" "$build_dir/$dir"
+				OutputLog "Created symlink for: $dir"
+			done
+			OutputLog ""
 		fi
 
 		GetCommitSummary
