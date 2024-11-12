@@ -165,21 +165,21 @@ IncreaseVersion(){
 	OutputLog ""
 	OutputLog "Increase version"
 
-	if [ -f "$htdocs_dir/version.ini" ]; then
-		result=$(grep "$version" "$htdocs_dir/version.ini")
+	if [ -f "$root_path/static/version.ini" ]; then
+		result=$(grep "$version" "$root_path/static/version.ini")
 		old_version=$(echo $result | cut -d'=' -f 2)
 		old_string=$(echo $old_version | sed -e 's/\.//g')
 		new_string=$(echo $((old_string + 1)) | sed 's/.\{1\}/&./g')
 		new_version="${new_string%?}"
 
 		OutputLog "New version is: $new_version"
-		sed -i "s/$old_version/$new_version/" "$htdocs_dir/version.ini"
+		sed -i "s/$old_version/$new_version/" "$root_path/static/version.ini"
 	else
 		OutputLog 'Create version file'
-		echo 'version=0' >> "$htdocs_dir/version.ini"
+		echo 'version=0' >> "$root_path/static/version.ini"
 
 		OutputLog "Add to ignored files list"
-		echo -n "version.ini" >> "$htdocs_dir/.git/info/exclude"
+		echo -n "version.ini" >> "$root_path/static/.git/info/exclude"
 		OutputLog ""
 	fi
 }
