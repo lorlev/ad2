@@ -65,7 +65,7 @@ if {
 		fi
 
 		fourth_hash=$(git rev-list --skip=3 -n 1 "$commit_hash")
-		if [[ "$commit_hash" != "$fourth_hash" ]]; then
+		if [[ -n "$fourth_hash" && "$commit_hash" != "$fourth_hash" ]]; then
 			echo
 			OutputLog "Clean Up old build: $fourth_hash"
 			rm -rf "$root_path/builds/$fourth_hash" || OutputLog "Failed to remove old build"
