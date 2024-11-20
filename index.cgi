@@ -75,8 +75,8 @@ if {
 			echo
 			OutputLog "Execute special ($TECH) script"
 
-			if [ -f "$local_path/$TECH/execute.cgi" ]; then
-				source "$local_path/$TECH/execute.cgi"
+			if [ -f "$local_path/tech/$TECH.cgi" ]; then
+				source "$local_path/tech/$TECH.cgi"
 			fi
 		fi
 
