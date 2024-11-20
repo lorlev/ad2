@@ -4,6 +4,8 @@ if [ "$COMPOSER" == "Y" -o "$COMPOSER" == "y" ]; then
 	OutputLog ""
 	OutputLog "Composer install"
 
+	cd $build_dir
+
 	export HOME=$root_path
 	export COMPOSER_HOME=$root_path/.composer
 
