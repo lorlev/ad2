@@ -1,10 +1,8 @@
 #!/bin/bash
 
-if [ "$COMPOSER" == "Y" -o "$COMPOSER" == "y" ]; then
+if [ "$RUN_COMPOSER" == "Y" -o "$RUN_COMPOSER" == "y" ]; then
 	OutputLog ""
 	OutputLog "Composer install"
-
-	cd $build_dir
 
 	export HOME=$root_path
 	export COMPOSER_HOME=$root_path/.composer
@@ -25,7 +23,7 @@ if [ "$COMPOSER" == "Y" -o "$COMPOSER" == "y" ]; then
 
 	OutputLog "Composer output writed in /composer.output.log"
 
-	if [ "$ARTISAN" == "Y" -o "$ARTISAN" == "y" ]; then
+	if [ "$RUN_ARTISAN" == "Y" -o "$RUN_ARTISAN" == "y" ]; then
 		OutputLog
 		OutputLog "Execute Artisan Commands"
 

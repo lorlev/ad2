@@ -10,8 +10,23 @@ LoadEnv(){
 		OutputLog ""
 	fi
 
-	## Clear spaces, tabs, empty lines & comments in config file
-	export $(sed "s/ *= */=/g; s/	//g; s/[#].*$//; /^$/d;" "$local_path/.env")
+	OutputLog "Reading .env file:"
+	while IFS='=' read -r key value; do
+		# Remove leading/trailing whitespace from key and value
+		key=$(echo "$key" | sed 's/^[ \t]*//; s/[ \t]*$//')
+		value=$(echo "$value" | sed 's/^[ \t]*//; s/[ \t]*$//')
+
+		# Skip empty lines and comments
+		if [[ -z "$key" || "$key" == \#* ]]; then
+			continue
+		fi
+
+		# Remove inline comments from the value
+		value=$(echo "$value" | sed 's/[ \t]*#.*$//')
+
+		# Export the variable
+		export "$key=$value"
+	done < "$local_path/.env"
 }
 
 SelfUpdate() {
@@ -190,7 +205,7 @@ CloneRepository(){
 	eval `ssh-agent` &>/dev/null
 
 	OutputLog "Adding SSH key..."
-	if ssh-add "$local_path/access/access-key"; then
+	if ssh-add "$local_path/access/access-key" > /dev/null 2>&1; then
 		OutputLog "SSH key added successfully."
 	else
 		OutputLog "Failed to add SSH key."
@@ -207,7 +222,7 @@ CloneRepository(){
 
 	# Clone the repository and echo result
 	OutputLog "Cloning repository from $repo_url to $build_dir"
-	if git clone "$repo_url" "$build_dir"; then
+	if git clone "$repo_url" "$build_dir" > /dev/null 2>&1; then
 		OutputLog "Repository cloned successfully."
 
 		chown -R www-data:ftpusers "$build_dir"
@@ -220,7 +235,6 @@ CloneRepository(){
 
 	umask 0022
 }
-
 
 CheckoutToBranch(){
 	OutputLog "Try to switch branch"
@@ -249,7 +263,6 @@ GetServerSummary(){
 
 	OutputLog "--------------------------------------"
 	OutputLog ""
-
 }
 
 OutputLog(){
@@ -261,5 +274,5 @@ OutputLog(){
 		mkdir -p "$logs_dir"
 	fi
 
-	echo "`date "+%d/%b/%Y:%H:%M:%S %Z"` ""$message" >> "$logs_dir/auto.deploy.log"
+	echo "`date "+%d/%b/%Y:%H:%M:%S %Z"` $message" >> "$logs_dir/auto.deploy.log"
 }

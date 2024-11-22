@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$GUNICORN" == "Y" -o "$GUNICORN" == "y" ]; then
+if [ "$RUN_GUNICORN" == "Y" -o "$RUN_GUNICORN" == "y" ]; then
 	OutputLog ""
 	OutputLog "Sync Python requirements"
 
