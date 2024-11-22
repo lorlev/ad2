@@ -96,34 +96,13 @@ if {
 
 		if [ -n "$STATIC_DIRS" ]; then
 			OutputLog "There are static dirs: $STATIC_DIRS"
-
-			read -ra DIRS <<< "$STATIC_DIRS"
-			for dir in "${DIRS[@]}"; do
-				if [ ! -d "$root_path/static/$dir" ]; then
-					mkdir -p "$root_path/static/$dir"
-					OutputLog "Created Static dir: $dir"
-				fi
-
-				# Remove any existing symlink and create a new one
-				rm -f "$build_dir/$dir"
-				ln -s "../../static/$dir" "$build_dir/$dir"
-				OutputLog "Created symlink for: $dir"
-			done
+			CreateSymlinks "dir" "STATIC_DIRS"
 			OutputLog ""
 		fi
 
 		if [ -n "$STATIC_FILES" ]; then
 			OutputLog "There are static files: $STATIC_FILES"
-
-			read -ra FILES <<< "$STATIC_FILES"
-			for file in "${FILES[@]}"; do
-				if [ -f "$root_path/static/$file" ]; then
-					# Remove any existing symlink and create a new one
-					rm -f "$build_dir/$file"
-					ln -s "../../static/$file" "$build_dir/$file"
-					OutputLog "Created symlink for: $file"
-				fi
-			done
+			CreateSymlinks "file" "STATIC_FILES"
 			OutputLog ""
 		fi
 

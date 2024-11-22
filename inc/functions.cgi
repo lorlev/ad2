@@ -265,6 +265,60 @@ GetServerSummary(){
 	OutputLog ""
 }
 
+CreateSymlinks() {
+	local type="$1"  # 'file' or 'dir'
+
+	local paths=""
+	if [ "$type" == "dir" ]; then
+		paths="$STATIC_DIRS"
+	else
+		paths="$STATIC_FILES"
+	fi
+
+	read -ra ITEMS <<< "$paths"
+	for item in "${ITEMS[@]}"; do
+		# Determine the source path based on type
+		if [ "$type" == "dir" ]; then
+			# Ensure the static directory exists
+			if [ ! -d "$root_path/static/$item" ]; then
+				mkdir -p "$root_path/static/$item"
+				OutputLog "Created Static dir: $item"
+			fi
+			src_path="$root_path/static/$item"
+		else
+			# Ensure the static file exists
+			if [ ! -f "$root_path/static/$item" ]; then
+				OutputLog "Static file not found: $item"
+				continue
+			fi
+			src_path="$root_path/static/$item"
+		fi
+
+		# Calculate the full path for the symlink in the build directory
+		symlink_path="$build_dir/$item"
+
+		# Get the parent directory of the symlink path
+		parent_dir=$(dirname "$symlink_path")
+
+		# Create parent directories in the build directory if they don't exist
+		if [ ! -d "$parent_dir" ]; then
+			mkdir -p "$parent_dir"
+			OutputLog "Created parent directory: ${parent_dir#$build_dir/}"
+		fi
+
+		# Remove any existing file or symlink at the symlink path
+		rm -f "$symlink_path"
+
+		# Calculate the relative path from the symlink location to the source path
+		rel_path=$(realpath --relative-to="$parent_dir" "$src_path")
+
+		# Create the symlink
+		ln -s "$rel_path" "$symlink_path"
+
+		OutputLog "Created symlink for: $item"
+	done
+}
+
 OutputLog(){
 	message=$1
 
