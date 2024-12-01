@@ -267,13 +267,9 @@ GetServerSummary(){
 
 CreateSymlinks() {
 	local type="$1"  # 'file' or 'dir'
+	local paths_var="$2"
 
-	local paths=""
-	if [ "$type" == "dir" ]; then
-		paths="$STATIC_DIRS"
-	else
-		paths="$STATIC_FILES"
-	fi
+	local paths="${!paths_var}"
 
 	read -ra ITEMS <<< "$paths"
 	for item in "${ITEMS[@]}"; do
