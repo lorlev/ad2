@@ -255,6 +255,8 @@ GetCommitSummary(){
 }
 
 GetServerSummary(){
+	OutputLog "The current user is: $(whoami)"
+	OutputLog "Your current group is: $(id -gn)"
 	OutputLog "Your remote address is: ${REMOTE_ADDR}"
 	OutputLog "Server time is: $(date)"
 	OutputLog ""
@@ -310,6 +312,11 @@ CreateSymlinks() {
 
 		# Create the symlink
 		ln -s "$rel_path" "$symlink_path"
+
+		chmod -R 775 "$rel_path"
+		chmod -R 775 "$symlink_path"
+		chown -R www-data:ftpusers "$rel_path"
+		chown -R www-data:ftpusers "$symlink_path"
 
 		OutputLog "Created symlink for: $item"
 	done
