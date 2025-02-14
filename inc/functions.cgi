@@ -220,10 +220,10 @@ CloneRepository(){
 		OutputLog ""
 	fi
 
-	# Clone the specified branch
-	OutputLog "Cloning repository branch $GIT_BRANCH from $repo_url to $build_dir"
-	if git clone --branch "$GIT_BRANCH" --single-branch "$repo_url" "$build_dir" > /dev/null 2>&1; then
-		OutputLog "Repository cloned successfully."
+	# Clone only the latest commit for the specified branch
+	OutputLog "Cloning repository branch $GIT_BRANCH from $repo_url to $build_dir with shallow clone"
+	if git clone --branch "$GIT_BRANCH" --single-branch --depth 1 "$repo_url" "$build_dir" > /dev/null 2>&1; then
+		OutputLog "Repository cloned successfully with shallow clone."
 
 		chown -R www-data:ftpusers "$build_dir"
 		chmod -R 775 "$build_dir"
