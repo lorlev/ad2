@@ -220,9 +220,9 @@ CloneRepository(){
 		OutputLog ""
 	fi
 
-	# Clone the repository and echo result
-	OutputLog "Cloning repository from $repo_url to $build_dir"
-	if git clone "$repo_url" "$build_dir" > /dev/null 2>&1; then
+	# Clone the specified branch
+	OutputLog "Cloning repository branch $GIT_BRANCH from $repo_url to $build_dir"
+	if git clone --branch "$GIT_BRANCH" --single-branch "$repo_url" "$build_dir" > /dev/null 2>&1; then
 		OutputLog "Repository cloned successfully."
 
 		chown -R www-data:ftpusers "$build_dir"
