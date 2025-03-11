@@ -278,7 +278,6 @@ CreateSymlinks() {
 
 	read -ra ITEMS <<< "$paths"
 	for item in "${ITEMS[@]}"; do
-		# Determine the source path based on type
 		if [ "$type" == "dir" ]; then
 			# Ensure the static directory exists
 			if [ ! -d "$root_path/static/$item" ]; then
@@ -298,28 +297,30 @@ CreateSymlinks() {
 		# Calculate the full path for the symlink in the build directory
 		symlink_path="$build_dir/$item"
 
-		# Get the parent directory of the symlink path
-		parent_dir=$(dirname "$symlink_path")
-
 		# Create parent directories in the build directory if they don't exist
+		parent_dir=$(dirname "$symlink_path")
 		if [ ! -d "$parent_dir" ]; then
 			mkdir -p "$parent_dir"
 			OutputLog "Created parent directory: ${parent_dir#$build_dir/}"
 		fi
 
-		# Remove any existing file or symlink at the symlink path
-		rm -f "$symlink_path"
+		# Only remove existing symlink if it's actually a symlink
+		if [ -L "$symlink_path" ]; then
+			rm -f "$symlink_path"
+		fi
 
-		# Calculate the relative path from the symlink location to the source path
+		# Create the symlink using an absolute or relative path
+		# (relative is fine, but the important part is to NOT chmod the relative)
 		rel_path=$(realpath --relative-to="$parent_dir" "$src_path")
-
-		# Create the symlink
 		ln -s "$rel_path" "$symlink_path"
 
-		chmod -R 775 "$rel_path"
-		chmod -R 775 "$symlink_path"
-		chown -R www-data:ftpusers "$rel_path"
-		chown -R www-data:ftpusers "$symlink_path"
+		# Safely set permissions on the *actual* target directory/file
+		chmod -R 775 "$src_path"
+		chown -R www-data:ftpusers "$src_path"
+
+		# Optionally set perms on the symlink itself (which is usually a no-op)
+		chmod 775 "$symlink_path"
+		chown www-data:ftpusers "$symlink_path"
 
 		OutputLog "Created symlink for: $item"
 	done
