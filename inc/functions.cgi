@@ -89,7 +89,6 @@ GetCommitsCount() {
 	local post_payload=$1
 	local platform=$2
 
-	OutputLog "$GIT_BRANCH"
 	case $platform in
 		"gitlab")
 			# GitLab logic
@@ -97,7 +96,7 @@ GetCommitsCount() {
 			;;
 		"bitbucket")
 			# Bitbucket logic
-			echo $(echo "$post_payload" | jq '[.push.changes[].new | select(.name == "'$GIT_BRANCH'" and .type == "branch")] | length')
+			echo $(echo "$post_payload" | jq --arg branch "$GIT_BRANCH" '[.push.changes[].new | select(.name == $branch and .type == "branch")] | length')
 			;;
 		"github")
 			# GitHub logic
