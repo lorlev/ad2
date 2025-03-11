@@ -88,20 +88,20 @@ UpdateAccessStructure(){
 GetCommitsCount() {
 	local post_payload=$1
 	local platform=$2
-	local branch=$3
 
+	OutputLog "$GIT_BRANCH"
 	case $platform in
 		"gitlab")
 			# GitLab logic
-			echo $(echo $post_payload | jq --arg branch "$branch" '[.commits[] | select(.id != null)] | length')
+			echo $(echo $post_payload | jq --arg branch "$GIT_BRANCH" '[.commits[] | select(.id != null)] | length')
 			;;
 		"bitbucket")
 			# Bitbucket logic
-			echo $(echo "$post_payload" | jq '[.push.changes[].new | select(.name == "'$(echo $branch)'" and .type == "branch")] | length')
+			echo $(echo "$post_payload" | jq '[.push.changes[].new | select(.name == "'$GIT_BRANCH'" and .type == "branch")] | length')
 			;;
 		"github")
 			# GitHub logic
-			echo $(echo $post_payload | jq --arg branch "$branch" '[.commits[] | select(.distinct == true and (.message | length) > 0)] | length')
+			echo $(echo $post_payload | jq --arg branch "$GIT_BRANCH" '[.commits[] | select(.distinct == true and (.message | length) > 0)] | length')
 			;;
 		*)
 			echo 0

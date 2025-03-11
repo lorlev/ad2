@@ -39,7 +39,7 @@ if {
 		SelfUpdate
 	fi
 
-	IS_COMMITS=$(GetCommitsCount "$POST" "$platform" "$GIT_BRANCH")
+	IS_COMMITS=$(GetCommitsCount "$POST" "$platform")
 
 	if [ "$IS_COMMITS" -gt 0 ]; then
 		build_dir="$root_path/builds/$commit_hash"
