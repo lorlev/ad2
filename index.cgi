@@ -27,7 +27,8 @@ if {
 	elif [ -n "$HTTP_X_EVENT_KEY" ] && [ "$HTTP_X_EVENT_KEY" = "repo:push" ]; then
 		platform="bitbucket"
 		commit_hash=$(echo "$POST" | jq -r '.push.changes[0].new.target.hash')
-		repo_url=$(echo "$POST" | jq -r '.repository.links.clone[] | select(.name=="ssh") | .href')
+		full_name=$(echo "$POST" | jq -r '.repository.full_name')
+		repo_url="git@bitbucket.org:${full_name}.git"
 	elif [ -n "$HTTP_X_GITHUB_EVENT" ] && [ "$HTTP_X_GITHUB_EVENT" = "push" ]; then
 		platform="github"
 		commit_hash=$(echo "$POST" | jq -r '.after')
