@@ -255,10 +255,6 @@ CheckoutToBranch(){
 GetCommitSummary(){
 	OutputLog "Git commit hash: $commit_hash"
 	OutputLog "Your platform is: ${platform}"
-	OutputLog "Git Status is:"
-
-	printf -v status_out '%s\n' "$(git -C "$build_dir" -c color.ui=always status)"
-	OutputLog "$status_out"
 }
 
 GetServerSummary(){
