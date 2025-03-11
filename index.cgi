@@ -34,7 +34,7 @@ if {
 		echo
 		echo
 
-		echo "Unsupported platform"
+		OutputLog "Unsupported platform"
 
 		SelfUpdate
 	fi
@@ -125,7 +125,9 @@ if {
 		echo
 		echo
 
-		echo "Build skipped"
+		OutputLog "Platform: $platform"
+		OutputLog "Commit Hash: $commit_hash"
+		OutputLog "Build skipped"
 
 		SelfUpdate
 	fi
@@ -134,5 +136,5 @@ else
 	echo
 	echo
 
-	echo "Wrong Gateway"
+	OutputLog "Wrong Gateway"
 fi
