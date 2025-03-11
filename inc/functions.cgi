@@ -47,8 +47,10 @@ SelfUpdate() {
 
 		ERROR_FILE=$(mktemp)
 
-		# Ignore any errors from git pull
-		git pull > /dev/null 2>>"$ERROR_FILE" || true
+		# Discard any local changes before pulling updates
+		git reset --hard HEAD > /dev/null 2>>"$ERROR_FILE"
+		git clean -fd > /dev/null 2>>"$ERROR_FILE"
+		git pull --rebase > /dev/null 2>>"$ERROR_FILE" || true
 
 		if [ -s "$ERROR_FILE" ]; then
 			OutputLog "Failed to update, but continuing execution..."
@@ -60,12 +62,17 @@ SelfUpdate() {
 		rm -f "$ERROR_FILE"
 	elif [ "$REMOTE" = "$BASE" ]; then
 		OutputLog "Local version has uncommitted changes. Ignoring and continuing..."
+		git reset --hard HEAD > /dev/null 2>&1
+		git clean -fd > /dev/null 2>&1
+		git pull --rebase > /dev/null 2>&1
 	else
-		OutputLog "Branches have diverged. Manual intervention needed, but continuing..."
+		OutputLog "Branches have diverged. Resetting local changes and forcing update..."
+		git fetch --all > /dev/null 2>&1
+		git reset --hard "$UPSTREAM" > /dev/null 2>&1
+		git clean -fd > /dev/null 2>&1
 	fi
 
 	UpdateAccessStructure
-
 	OutputLog ""
 }
 
