@@ -7,6 +7,12 @@ if [ "$RUN_COMPOSER" == "Y" -o "$RUN_COMPOSER" == "y" ]; then
 	export HOME=$root_path
 	export COMPOSER_HOME=$root_path/.composer
 
+	if [ ! -d "$root_path/.composer/cache" ]; then
+		mkdir -p "$root_path/.composer/cache"
+		chown -R www-data:www-data "$root_path/.composer"
+		chmod -R 775 "$root_path/.composer"
+	fi
+
 	/usr/bin/php \
 		-d allow_url_fopen=1 \
 		-d disable_functions= \
