@@ -90,7 +90,7 @@ GetCommitsCount() {
 			;;
 		"bitbucket")
 			# Bitbucket logic
-			echo $(echo $post_payload | jq --arg branch "$branch" '[.push.changes[].new | select(.name == $branch and .type == "branch")] | length')
+			echo $(echo "$post_payload" | jq --arg branch "$branch" '[.push.changes[] | select(.new.name == $branch) | .commits | length] | add'
 			;;
 		"github")
 			# GitHub logic
