@@ -15,6 +15,9 @@ if {
 	[ "$REQUEST_METHOD" = "POST" ]
 }; then
 	POST=$(jq '.' < /dev/stdin)
+	ENV_LOG=$(mktemp)
+
+	LoadEnv > "$ENV_LOG" 2>&1
 
 	# Detect platform and branch/commits extraction logic
 	if [ -n "$HTTP_X_GITLAB_EVENT" ] && [ "$HTTP_X_GITLAB_EVENT" = "Push Hook" ]; then
@@ -48,7 +51,8 @@ if {
 		echo
 		echo
 
-		LoadEnv
+		cat "$ENV_LOG"
+		rm -f "$ENV_LOG"
 
 		CloneRepository
 
