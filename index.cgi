@@ -8,7 +8,7 @@ root_path=$(dirname $(dirname $(readlink -f "$0")))
 local_path="$root_path/auto.deploy"
 htdocs_dir="$root_path/htdocs"
 logs_dir="$root_path/server.logs"
-PID_FILE="$root_path/deploy_script.pid"
+PID_FILE="$local_path/deploy_script.pid"
 
 # Check if the script is already running
 if [ -f "$PID_FILE" ]; then
