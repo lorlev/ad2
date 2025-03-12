@@ -3,15 +3,38 @@
 printf "Content-Type: text/plain"
 echo
 
+# Define paths
 root_path=$(dirname $(dirname $(readlink -f "$0")))
 local_path="$root_path/auto.deploy"
 htdocs_dir="$root_path/htdocs"
 logs_dir="$root_path/server.logs"
+PID_FILE="$root_path/deploy_script.pid"
+
+# Check if the script is already running
+if [ -f "$PID_FILE" ]; then
+	existing_pid=$(cat "$PID_FILE")
+	if ps -p "$existing_pid" > /dev/null 2>&1; then
+		printf "Status: 503 Service Unavailable\n"
+		echo
+		echo "Deployment is already running with PID $existing_pid"
+		exit 1
+	else
+		# Stale PID file found, remove it
+		rm -f "$PID_FILE"
+	fi
+fi
+
+# Write the current PID to the file
+echo $$ > "$PID_FILE"
+
+# Ensure cleanup on exit
+trap 'rm -f "$PID_FILE"; exit' INT TERM EXIT
+
 
 source "$local_path/inc/functions.cgi"
 
 if {
-	[ "$HTTP_CONTENT_TYPE" = "application/json" ] && 
+	[ "$HTTP_CONTENT_TYPE" = "application/json" ] &&
 	[ "$REQUEST_METHOD" = "POST" ]
 }; then
 	POST=$(jq '.' < /dev/stdin)
@@ -19,7 +42,7 @@ if {
 
 	LoadEnv > "$ENV_LOG" 2>&1
 
-	# Detect platform and branch/commits extraction logic
+	# Detect platform and extract commit details
 	if [ -n "$HTTP_X_GITLAB_EVENT" ] && [ "$HTTP_X_GITLAB_EVENT" = "Push Hook" ]; then
 		platform="gitlab"
 		commit_hash=$(echo "$POST" | jq -r '.after')
@@ -34,13 +57,13 @@ if {
 		commit_hash=$(echo "$POST" | jq -r '.after')
 		repo_url=$(echo "$POST" | jq -r '.repository.ssh_url')
 	else
-		printf "Status: 501 Not Implemented "
+		printf "Status: 501 Not Implemented"
 		echo
 		echo
-
 		OutputLog "Unsupported platform"
-
+		rm -f "$PID_FILE"
 		SelfUpdate
+		exit 1
 	fi
 
 	IS_COMMITS=$(GetCommitsCount "$POST" "$platform")
@@ -57,7 +80,7 @@ if {
 
 		CloneRepository
 
-		cd $build_dir
+		cd "$build_dir"
 
 		if [ -z "$(git config alias.up)" ] || [ "$(git config core.fileMode)" != "false" ]; then
 			ModifyGitConfig
@@ -65,21 +88,21 @@ if {
 
 		OutputLog "Git Branch is: $(git rev-parse --abbrev-ref HEAD)"
 
-		if [ $(git rev-parse --abbrev-ref HEAD) != $GIT_BRANCH ]; then
+		if [ "$(git rev-parse --abbrev-ref HEAD)" != "$GIT_BRANCH" ]; then
 			CheckoutToBranch
 		fi
 
-		fourth_hash=$(git rev-list --skip=3 -n 1 "$commit_hash")
+		fourth_hash=$(git rev-list --skip="${BUILDS_COUNT:-3}" -n 1 "$commit_hash")
 		if [[ -n "$fourth_hash" && "$commit_hash" != "$fourth_hash" ]]; then
 			OutputLog "Clean Up old build: $fourth_hash"
 			rm -rf "$root_path/builds/$fourth_hash" || OutputLog "Failed to remove old build"
 		fi
 
-		if [ "$INCREASE_VERSION" == "Y" -o "$INCREASE_VERSION" == "y" ]; then
+		if [ "$INCREASE_VERSION" == "Y" ] || [ "$INCREASE_VERSION" == "y" ]; then
 			IncreaseVersion
 		fi
 
-		if [ "$PUSH" == "Y" -o "$PUSH" == "y" ]; then
+		if [ "$PUSH" == "Y" ] || [ "$PUSH" == "y" ]; then
 			SendPushNotification
 		fi
 
@@ -97,7 +120,7 @@ if {
 		fi
 
 		OutputLog "Creating new relative symlink for htdocs"
-		ln -s "builds/$commit_hash" $htdocs_dir || OutputLog "Failed to create symlink"
+		ln -s "builds/$commit_hash" "$htdocs_dir" || OutputLog "Failed to create symlink"
 
 		if [ -n "$STATIC_DIRS" ]; then
 			OutputLog "There are static dirs: $STATIC_DIRS"
@@ -111,8 +134,8 @@ if {
 			OutputLog ""
 		fi
 
-		if [ "$EXECUTE_SCRIPT" == "Y" -o "$EXECUTE_SCRIPT" == "y" ]; then
-			cd $build_dir
+		if [ "$EXECUTE_SCRIPT" == "Y" ] || [ "$EXECUTE_SCRIPT" == "y" ]; then
+			cd "$build_dir"
 
 			OutputLog ""
 			OutputLog "Execute special ($TECH) script"
@@ -124,9 +147,10 @@ if {
 
 		GetCommitSummary
 		GetServerSummary
+		rm -f "$PID_FILE"
 		SelfUpdate
 	else
-		printf "Status: 501 Not Implemented "
+		printf "Status: 501 Not Implemented"
 		echo
 		echo
 
@@ -134,6 +158,7 @@ if {
 		OutputLog "Commit Hash: $commit_hash"
 		OutputLog "Build skipped"
 
+		rm -f "$PID_FILE"
 		SelfUpdate
 	fi
 else
@@ -142,4 +167,5 @@ else
 	echo
 
 	OutputLog "Wrong Gateway"
+	rm -f "$PID_FILE"
 fi
