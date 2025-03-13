@@ -228,7 +228,7 @@ CloneRepository(){
 
 	# Clone with a depth of 5 commits for the specified branch
 	OutputLog "Cloning repository branch $GIT_BRANCH from $repo_url to $build_dir with depth 5"
-	if ! git clone --branch "$GIT_BRANCH" --single-branch --depth 4 "$repo_url" "$build_dir" 2> /tmp/git_error.log; then
+	if ! git clone --branch "$GIT_BRANCH" --single-branch --depth 5 "$repo_url" "$build_dir" 2> /tmp/git_error.log; then
 		OutputLog "Git clone failed. Reason: $(cat /tmp/git_error.log)"
 		exit 1
 	fi
@@ -315,12 +315,12 @@ CreateSymlinks() {
 		ln -s "$rel_path" "$symlink_path"
 
 		# Safely set permissions on the *actual* target directory/file
-		chmod -R 775 "$src_path"
-		chown -R www-data:ftpusers "$src_path"
+		#chmod -R 775 "$src_path"
+		#chown -R www-data:ftpusers "$src_path"
 
 		# Optionally set perms on the symlink itself (which is usually a no-op)
-		chmod 775 "$symlink_path"
-		chown www-data:ftpusers "$symlink_path"
+		#chmod 775 "$symlink_path"
+		#chown www-data:ftpusers "$symlink_path"
 
 		OutputLog "Created symlink for: $item"
 	done
