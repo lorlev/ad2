@@ -8,28 +8,6 @@ root_path=$(dirname $(dirname $(readlink -f "$0")))
 local_path="$root_path/auto.deploy"
 htdocs_dir="$root_path/htdocs"
 logs_dir="$root_path/server.logs"
-PID_FILE="$local_path/deploy_script.pid"
-
-# Check if the script is already running
-if [ -f "$PID_FILE" ]; then
-	existing_pid=$(cat "$PID_FILE")
-	if ps -p "$existing_pid" > /dev/null 2>&1; then
-		printf "Status: 503 Service Unavailable\n"
-		echo
-		echo "Deployment is already running with PID $existing_pid"
-		exit 1
-	else
-		# Stale PID file found, remove it
-		rm -f "$PID_FILE"
-	fi
-fi
-
-# Write the current PID to the file
-echo $$ > "$PID_FILE"
-
-# Ensure cleanup on exit
-trap 'rm -f "$PID_FILE"; exit' INT TERM EXIT
-
 
 source "$local_path/inc/functions.cgi"
 
@@ -61,7 +39,7 @@ if {
 		echo
 		echo
 		OutputLog "Unsupported platform"
-		rm -f "$PID_FILE"
+
 		SelfUpdate
 		exit 1
 	fi
@@ -147,7 +125,7 @@ if {
 
 		GetCommitSummary
 		GetServerSummary
-		rm -f "$PID_FILE"
+
 		SelfUpdate
 	else
 		printf "Status: 501 Not Implemented"
@@ -158,7 +136,6 @@ if {
 		OutputLog "Commit Hash: $commit_hash"
 		OutputLog "Build skipped"
 
-		rm -f "$PID_FILE"
 		SelfUpdate
 	fi
 else
@@ -167,5 +144,4 @@ else
 	echo
 
 	OutputLog "Wrong Gateway"
-	rm -f "$PID_FILE"
 fi
