@@ -86,17 +86,6 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 
 	cd "$root_path"
 
-	if [ -L "$htdocs_dir" ]; then
-		OutputLog "Removing existing symlink htdocs"
-		rm -f "$htdocs_dir" || OutputLog "Failed to remove symlink"
-	elif [ -d "$htdocs_dir" ]; then
-		OutputLog "Removing existing directory htdocs."
-		rm -rf "$htdocs_dir" || OutputLog "Failed to remove directory"
-	fi
-
-	OutputLog "Creating new relative symlink for htdocs"
-	ln -s "builds/$commit_hash" "$htdocs_dir" || OutputLog "Failed to create symlink"
-
 	if [ -n "$STATIC_DIRS" ]; then
 		OutputLog "There are static dirs: $STATIC_DIRS"
 		CreateSymlinks "dir" "STATIC_DIRS"
@@ -119,6 +108,19 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 			source "$local_path/tech/$TECH.cgi"
 		fi
 	fi
+
+	cd "$root_path"
+
+	if [ -L "$htdocs_dir" ]; then
+		OutputLog "Removing existing symlink htdocs"
+		rm -f "$htdocs_dir" || OutputLog "Failed to remove symlink"
+	elif [ -d "$htdocs_dir" ]; then
+		OutputLog "Removing existing directory htdocs."
+		rm -rf "$htdocs_dir" || OutputLog "Failed to remove directory"
+	fi
+
+	OutputLog "Creating new relative symlink for htdocs"
+	ln -s "builds/$commit_hash" "$htdocs_dir" || OutputLog "Failed to create symlink"
 
 	GetCommitSummary
 	GetServerSummary
