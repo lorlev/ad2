@@ -78,7 +78,6 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 	if [ "$EXECUTE_SCRIPT" == "Y" ] || [ "$EXECUTE_SCRIPT" == "y" ]; then
 		cd "$build_dir_path"
 
-		OutputLog ""
 		OutputLog "Execute special ($TECH) script"
 
 		if [ -f "$local_path/tech/$TECH.cgi" ]; then
