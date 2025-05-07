@@ -3,8 +3,9 @@
 # Define paths
 root_path=$(dirname $(dirname $(readlink -f "$0")))
 local_path="$root_path/auto.deploy"
-htdocs_dir="$root_path/htdocs"
+htdocs_path="$root_path/htdocs"
 logs_dir="$root_path/server.logs"
+temp_symlink="${htdocs_path}_tmp"
 
 source "$local_path/inc/functions.cgi"
 
@@ -37,14 +38,14 @@ fi
 IS_COMMITS=$(GetCommitsCount "$POST" "$platform")
 
 if [ "$IS_COMMITS" -gt 0 ]; then
-	build_dir="$root_path/builds/$commit_hash"
+	build_dir_path="$root_path/builds/$commit_hash"
 
 	cat "$ENV_LOG"
 	rm -f "$ENV_LOG"
 
 	CloneRepository
 
-	cd "$build_dir"
+	cd "$build_dir_path"
 
 	if [ -z "$(git config alias.up)" ] || [ "$(git config core.fileMode)" != "false" ]; then
 		ModifyGitConfig
@@ -81,8 +82,8 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 		SendPushNotification
 	fi
 
-	chmod -R 775 "$build_dir"
-	chown -R www-data:ftpusers "$build_dir"
+	chmod -R 775 "$build_dir_path"
+	chown -R www-data:ftpusers "$build_dir_path"
 
 	cd "$root_path"
 
@@ -99,7 +100,7 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 	fi
 
 	if [ "$EXECUTE_SCRIPT" == "Y" ] || [ "$EXECUTE_SCRIPT" == "y" ]; then
-		cd "$build_dir"
+		cd "$build_dir_path"
 
 		OutputLog ""
 		OutputLog "Execute special ($TECH) script"
@@ -111,16 +112,12 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 
 	cd "$root_path"
 
-	if [ -L "$htdocs_dir" ]; then
-		OutputLog "Removing existing symlink htdocs"
-		rm -f "$htdocs_dir" || OutputLog "Failed to remove symlink"
-	elif [ -d "$htdocs_dir" ]; then
-		OutputLog "Removing existing directory htdocs."
-		rm -rf "$htdocs_dir" || OutputLog "Failed to remove directory"
-	fi
+	OutputLog "Creating atomic symlink: $temp_symlink → $build_dir_path"
 
-	OutputLog "Creating new relative symlink for htdocs"
-	ln -s "builds/$commit_hash" "$htdocs_dir" || OutputLog "Failed to create symlink"
+	ln -sfn "builds/$commit_hash" "$temp_symlink" && OutputLog "Temporary symlink created" || OutputLog "Failed to create temporary symlink"
+	mv -T "$temp_symlink" "$htdocs_path" && OutputLog "Symlink atomically switched to new build" || OutputLog "Failed to switch symlink"
+
+	OutputLog "htdocs now points to: $(readlink -f "$htdocs_path")"
 
 	GetCommitSummary
 	GetServerSummary

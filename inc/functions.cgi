@@ -218,25 +218,25 @@ CloneRepository(){
 	fi
 
 	# Check if the build directory exists, remove if it does, and log the action
-	if [ -d "$build_dir" ]; then
+	if [ -d "$build_dir_path" ]; then
 		OutputLog ""
-		OutputLog "Directory $build_dir exists. Removing existing directory..."
-		rm -rf "$build_dir"
+		OutputLog "Directory $build_dir_path exists. Removing existing directory..."
+		rm -rf "$build_dir_path"
 		OutputLog "Existing directory removed."
 		OutputLog ""
 	fi
 
 	# Clone with a depth of 5 commits for the specified branch
-	OutputLog "Cloning repository branch $GIT_BRANCH from $repo_url to $build_dir with depth 5"
-	if ! git clone --branch "$GIT_BRANCH" --single-branch --depth 5 "$repo_url" "$build_dir" 2> /tmp/git_error.log; then
+	OutputLog "Cloning repository branch $GIT_BRANCH from $repo_url to $build_dir_path with depth 5"
+	if ! git clone --branch "$GIT_BRANCH" --single-branch --depth 5 "$repo_url" "$build_dir_path" 2> /tmp/git_error.log; then
 		OutputLog "Git clone failed. Reason: $(cat /tmp/git_error.log)"
 		exit 1
 	fi
 
 	OutputLog "Repository cloned successfully with depth 5."
 
-	chown -R www-data:ftpusers "$build_dir"
-	chmod -R 775 "$build_dir"
+	chown -R www-data:ftpusers "$build_dir_path"
+	chmod -R 775 "$build_dir_path"
 
 	eval `ssh-agent -k` &>/dev/null
 
@@ -295,13 +295,13 @@ CreateSymlinks() {
 		fi
 
 		# Calculate the full path for the symlink in the build directory
-		symlink_path="$build_dir/$item"
+		symlink_path="$build_dir_path/$item"
 
 		# Create parent directories in the build directory if they don't exist
 		parent_dir=$(dirname "$symlink_path")
 		if [ ! -d "$parent_dir" ]; then
 			mkdir -p "$parent_dir"
-			OutputLog "Created parent directory: ${parent_dir#$build_dir/}"
+			OutputLog "Created parent directory: ${parent_dir#$build_dir_path/}"
 		fi
 
 		# Only remove existing symlink if it's actually a symlink
