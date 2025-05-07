@@ -95,7 +95,6 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 	mv -T "$temp_symlink" "$htdocs_path" && OutputLog "Symlink atomically switched to new build" || OutputLog "Failed to switch symlink"
 
 	OutputLog "htdocs now points to: $(readlink -f "$htdocs_path")"
-	OutputLog ""
 
 	if [ "$INCREASE_VERSION" == "Y" ] || [ "$INCREASE_VERSION" == "y" ]; then
 		IncreaseVersion
@@ -105,6 +104,7 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 		SendPushNotification
 	fi
 
+	OutputLog ""
 	OutputLog "Cleaning up old builds..."
 
 	BUILDS_COUNT="${BUILDS_COUNT:-3}"
@@ -124,6 +124,8 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 			fi
 		done
 	fi
+
+	OutputLog ""
 
 	GetCommitSummary
 	GetServerSummary
