@@ -112,12 +112,14 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 
 	cd "$root_path"
 
+	OutputLog ""
 	OutputLog "Creating atomic symlink: $temp_symlink → $build_dir_path"
 
 	ln -sfn "builds/$commit_hash" "$temp_symlink" && OutputLog "Temporary symlink created" || OutputLog "Failed to create temporary symlink"
 	mv -T "$temp_symlink" "$htdocs_path" && OutputLog "Symlink atomically switched to new build" || OutputLog "Failed to switch symlink"
 
 	OutputLog "htdocs now points to: $(readlink -f "$htdocs_path")"
+	OutputLog ""
 
 	GetCommitSummary
 	GetServerSummary
