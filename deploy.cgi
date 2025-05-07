@@ -4,6 +4,7 @@
 root_path=$(dirname $(dirname $(readlink -f "$0")))
 local_path="$root_path/auto.deploy"
 htdocs_path="$root_path/htdocs"
+builds_dir="$root_path/builds"
 logs_dir="$root_path/server.logs"
 temp_symlink="${htdocs_path}_tmp"
 
@@ -57,31 +58,6 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 		CheckoutToBranch
 	fi
 
-	BUILDS_COUNT="${BUILDS_COUNT:-3}"
-
-	# Get the commit hash skipping BUILDS_COUNT commits
-	old_commit_hash=$(git rev-list --skip="$BUILDS_COUNT" -n 1 "$commit_hash")
-	OutputLog "Old commit hash (skipped $BUILDS_COUNT commits): '$old_commit_hash'"
-
-	# Check if the old commit hash is valid and not the same as current
-	if [[ -n "$old_commit_hash" ]] && [[ "$commit_hash" != "$old_commit_hash" ]]; then
-		OutputLog "Clean Up old build: $old_commit_hash"
-
-		if [[ -d "$root_path/builds/$old_commit_hash" ]]; then
-			rm -rf "$root_path/builds/$old_commit_hash" && OutputLog "Old build removed" || OutputLog "Failed to remove old build"
-		else
-			OutputLog "Build directory does not exist: $root_path/builds/$old_commit_hash"
-		fi
-	fi
-
-	if [ "$INCREASE_VERSION" == "Y" ] || [ "$INCREASE_VERSION" == "y" ]; then
-		IncreaseVersion
-	fi
-
-	if [ "$PUSH" == "Y" ] || [ "$PUSH" == "y" ]; then
-		SendPushNotification
-	fi
-
 	chmod -R 775 "$build_dir_path"
 	chown -R www-data:ftpusers "$build_dir_path"
 
@@ -120,6 +96,34 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 
 	OutputLog "htdocs now points to: $(readlink -f "$htdocs_path")"
 	OutputLog ""
+
+	if [ "$INCREASE_VERSION" == "Y" ] || [ "$INCREASE_VERSION" == "y" ]; then
+		IncreaseVersion
+	fi
+
+	if [ "$PUSH" == "Y" ] || [ "$PUSH" == "y" ]; then
+		SendPushNotification
+	fi
+
+	OutputLog "Cleaning up old builds..."
+
+	BUILDS_COUNT="${BUILDS_COUNT:-3}"
+
+	# List all build directories by modified time, newest first
+	build_paths=($(find "$builds_dir" -mindepth 1 -maxdepth 1 -type d -printf "%T@ %p\n" | sort -nr | cut -d' ' -f2-))
+
+	total=${#build_paths[@]}
+	if (( total > BUILDS_COUNT )); then
+		for ((i=BUILDS_COUNT; i<total; i++)); do
+			# Avoid deleting the current build even by mistake
+			if [[ "${build_paths[$i]}" != "$build_dir_path" ]]; then
+				OutputLog "Removing old build: ${build_paths[$i]}"
+				rm -rf "${build_paths[$i]}"
+			else
+				OutputLog "Skipping removal of current active build: ${build_paths[$i]}"
+			fi
+		done
+	fi
 
 	GetCommitSummary
 	GetServerSummary
