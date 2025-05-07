@@ -21,7 +21,7 @@ if {
 	cat > "$post_data"
 
 	# Execute deploy.cgi in the background while passing the request data
-	nohup bash -c "$local_path/deploy.cgi < '$post_data'" > $logs_dir/deploy.log 2>&1 &
+	nohup bash -c "$local_path/deploy.cgi < '$post_data'" > $logs_dir/auto.deploy.background.log 2>&1 &
 else
 	echo "Wrong Gateway"
 fi
