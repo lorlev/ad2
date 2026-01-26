@@ -124,64 +124,6 @@ ModifyGitConfig(){
 	OutputLog ""
 }
 
-SendPushNotification() {
-	comment=""
-	author=""
-	repository=""
-	url=""
-
-	case "$platform" in
-		"bitbucket")
-			# Bitbucket-specific logic
-			comment=$(echo $POST | jq -r '.push.changes[].new | select(.name == "'$GIT_BRANCH'" and .type == "branch") | .target.message')
-			author=$(echo $POST | jq -r '.actor.display_name')
-			repository=$(echo $POST | jq -r '.repository.name')
-			url=$(echo $POST | jq -r '.push.changes[].new | select(.name == "'$GIT_BRANCH'" and .type == "branch") | .target.links.html.href')
-			;;
-		
-		"github")
-			# GitHub-specific logic
-			comment=$(echo $POST | jq -r '.head_commit.message')
-			author=$(echo $POST | jq -r '.pusher.name')
-			repository=$(echo $POST | jq -r '.repository.name')
-			url=$(echo $POST | jq -r '.head_commit.url')
-			;;
-		
-		"gitlab")
-			# GitLab-specific logic
-			comment=$(echo $POST | jq -r '.commits[0].message')
-			author=$(echo $POST | jq -r '.user_name')
-			repository=$(echo $POST | jq -r '.repository.name')
-			url=$(echo $POST | jq -r '.commits[0].url')
-			;;
-		
-		*)
-			OutputLog "Unknown platform: $platform"
-			return
-			;;
-	esac
-
-	# Clear New Lines in the comment
-	comment=$(echo $comment | sed ':a;s/\\n/<br>/g')
-
-	OutputLog ""
-	OutputLog "Send Push Notification"
-
-	# Send the push notification
-	message_result=$(curl -s -X GET \
-		-H "Content-Type: application/json" \
-		"$PUSH_URL?key=$PUSH_SECRET&repository=$repository&branch=$GIT_BRANCH&author=$author&commit=$comment&action_url=$url")
-
-	# Check if the message was sent successfully
-	message_is_send=$(echo $message_result | jq -r '.type')
-	if [ "$message_is_send" == "error" ]; then
-		OutputLog "Message not sent"
-		OutputLog "$message_result"
-	else
-		OutputLog "Message sent successfully"
-	fi
-}
-
 IncreaseVersion(){
 	OutputLog ""
 	OutputLog "Increase version"
@@ -206,7 +148,7 @@ IncreaseVersion(){
 }
 
 CloneRepository(){
-	umask 002
+	umask 0002
 
 	eval `ssh-agent` &>/dev/null
 
@@ -236,11 +178,14 @@ CloneRepository(){
 	OutputLog "Repository cloned successfully with depth 5."
 
 	chown -R www-data:ftpusers "$build_dir_path"
-	chmod -R 775 "$build_dir_path"
 
-	eval `ssh-agent -k` &>/dev/null
+	# Restore permissions WITHOUT killing setgid
+	find "$build_dir_path" -type d -exec chmod 2775 {} \;
+	find "$build_dir_path" -type f -exec chmod 664 {} \;
 
-	umask 0022
+	eval "$(ssh-agent -k)" >/dev/null
+
+	umask 0002
 }
 
 CheckoutToBranch(){
@@ -253,18 +198,21 @@ CheckoutToBranch(){
 }
 
 GetCommitSummary(){
+	OutputLog ""
 	OutputLog "Git commit hash: $commit_hash"
 	OutputLog "Your platform is: ${platform}"
 }
 
 GetServerSummary(){
+	OutputLog ""
 	OutputLog "The current user is: $(whoami)"
 	OutputLog "Your current group is: $(id -gn)"
 	OutputLog "Your remote address is: ${REMOTE_ADDR}"
 	OutputLog "Server time is: $(date)"
+	OutputLog "Deploy duration: ${DEPLOY_DURATION}"
 	OutputLog ""
 
-	OutputLog "Build complete"
+	OutputLog "Deploy complete"
 
 	OutputLog "--------------------------------------"
 	OutputLog ""
@@ -310,20 +258,18 @@ CreateSymlinks() {
 		fi
 
 		# Create the symlink using an absolute or relative path
-		# (relative is fine, but the important part is to NOT chmod the relative)
 		rel_path=$(realpath --relative-to="$parent_dir" "$src_path")
 		ln -s "$rel_path" "$symlink_path"
 
-		# Safely set permissions on the *actual* target directory/file
-		#chmod -R 775 "$src_path"
-		#chown -R www-data:ftpusers "$src_path"
-
-		# Optionally set perms on the symlink itself (which is usually a no-op)
-		#chmod 775 "$symlink_path"
-		#chown www-data:ftpusers "$symlink_path"
-
 		OutputLog "Created symlink for: $item"
 	done
+}
+
+GetProjectDomain() {
+	local script_path
+	script_path="$(readlink -f "$0")"
+
+	echo "www.$script_path" | awk -F'/datastore/web/' '{print $2}' | cut -d'/' -f1
 }
 
 OutputLog(){

@@ -9,9 +9,11 @@ logs_dir="$root_path/server.logs"
 temp_symlink="${htdocs_path}_tmp"
 
 source "$local_path/inc/functions.cgi"
+source "$local_path/inc/notifications.cgi"
 
 POST=$(jq '.' < /dev/stdin)
 ENV_LOG=$(mktemp)
+PROJECT_DOMAIN="$(GetProjectDomain)"
 
 LoadEnv > "$ENV_LOG" 2>&1
 
@@ -39,6 +41,14 @@ fi
 IS_COMMITS=$(GetCommitsCount "$POST" "$platform")
 
 if [ "$IS_COMMITS" -gt 0 ]; then
+	DEPLOY_START_TS=$(date +%s)
+
+	if [ -f "$local_path/notifs/$NOTIF_ENGINE.cgi" ]; then
+		source "$local_path/notifs/$NOTIF_ENGINE.cgi"
+	fi
+
+	notif_deploy_started
+
 	build_dir_path="$root_path/builds/$commit_hash"
 
 	cat "$ENV_LOG"
@@ -75,6 +85,10 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 		OutputLog ""
 	fi
 
+	if [ "$RUN_BUILD" == "Y" ] || [ "$RUN_BUILD" == "y" ]; then
+		source "$local_path/builder/$BUILDER.cgi"
+	fi
+
 	if [ "$EXECUTE_SCRIPT" == "Y" ] || [ "$EXECUTE_SCRIPT" == "y" ]; then
 		cd "$build_dir_path"
 
@@ -99,9 +113,11 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 		IncreaseVersion
 	fi
 
-	if [ "$PUSH" == "Y" ] || [ "$PUSH" == "y" ]; then
-		SendPushNotification
-	fi
+	DEPLOY_END_TS=$(date +%s)
+	DEPLOY_DURATION=$((DEPLOY_END_TS - DEPLOY_START_TS))
+
+	DEPLOY_LOG_URL="$PROJECT_DOMAIN/log.viewer/view/0/auto.deploy.log"
+	notif_deploy_result "SUCCEEDED" "$DEPLOY_DURATION" "$DEPLOY_LOG_URL"
 
 	OutputLog ""
 	OutputLog "Cleaning up old builds..."

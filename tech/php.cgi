@@ -1,5 +1,15 @@
 #!/bin/bash
 
+[ -f "$local_path/tech/custom.cgi" ] && source "$local_path/tech/custom.cgi"
+
+type before_tech >/dev/null 2>&1 && before_tech
+
+artisanSafe() {
+	env -i \
+		PATH=/usr/local/bin:/usr/bin:/bin \
+		/usr/bin/php artisan "$@"
+}
+
 if [ "$RUN_COMPOSER" == "Y" -o "$RUN_COMPOSER" == "y" ]; then
 	OutputLog ""
 	OutputLog "Composer install"
@@ -30,21 +40,40 @@ if [ "$RUN_COMPOSER" == "Y" -o "$RUN_COMPOSER" == "y" ]; then
 	OutputLog "Composer output writed in /composer.output.log"
 
 	if [ "$RUN_ARTISAN" == "Y" -o "$RUN_ARTISAN" == "y" ]; then
+		# Create static .env if missing
+		if [ ! -f "$root_path/static/.env" ]; then
+			if [ -f "$build_dir_path/.env.example" ]; then
+				cp "$build_dir_path/.env.example" "$root_path/static/.env"
+				OutputLog "Static .env created from .env.example"
+
+				ln -s "$root_path/static/.env" "$build_dir_path/.env"
+				OutputLog ".env symlinked from static directory"
+			fi
+		fi
+
 		OutputLog
 		OutputLog "Execute Artisan Commands"
 
-		# Clear cache
-		/usr/bin/php artisan cache:clear &>> "$logs_dir/artisan.output.log"
-		/usr/bin/php artisan auth:clear-resets &>> "$logs_dir/artisan.output.log"
+		# Check APP_KEY
+		APP_KEY_PRESENT=$(grep -E '^APP_KEY=base64:' "$root_path/static/.env")
 
-		# Clear routes cache
-		/usr/bin/php artisan route:clear &>> "$logs_dir/artisan.output.log"
-		/usr/bin/php artisan route:cache &>> "$logs_dir/artisan.output.log"
+		if [ -z "$APP_KEY_PRESENT" ]; then
+			OutputLog "Generating APP_KEY"
+			artisanSafe key:generate --force || {
+				OutputLog "ERROR: Failed to generate APP_KEY"
+			}
+		fi
 
-		# Clear config cache
-		/usr/bin/php artisan config:clear &>> "$logs_dir/artisan.output.log"
-		/usr/bin/php artisan config:cache &>> "$logs_dir/artisan.output.log"
+		type before_artisan >/dev/null 2>&1 && before_artisan
+
+		artisanSafe optimize:clear &>> "$logs_dir/artisan.output.log"
+		artisanSafe config:cache &>> "$logs_dir/artisan.output.log"
+		artisanSafe route:cache &>> "$logs_dir/artisan.output.log"
+
+		type after_artisan >/dev/null 2>&1 && after_artisan
 
 		OutputLog "Artisan output writed in /artisan.output.log"
 	fi
 fi
+
+type after_tech >/dev/null 2>&1 && after_tech
