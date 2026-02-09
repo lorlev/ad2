@@ -66,9 +66,9 @@ if [ "$RUN_COMPOSER" == "Y" -o "$RUN_COMPOSER" == "y" ]; then
 
 		type before_artisan >/dev/null 2>&1 && before_artisan
 
-		artisanSafe optimize:clear &>> "$logs_dir/artisan.output.log"
 		artisanSafe config:cache &>> "$logs_dir/artisan.output.log"
 		artisanSafe route:cache &>> "$logs_dir/artisan.output.log"
+		artisanSafe optimize:clear &>> "$logs_dir/artisan.output.log"
 
 		type after_artisan >/dev/null 2>&1 && after_artisan
 

@@ -109,6 +109,8 @@ if [ "$IS_COMMITS" -gt 0 ]; then
 
 	OutputLog "htdocs now points to: $(readlink -f "$htdocs_path")"
 
+	type after_symlink >/dev/null 2>&1 && after_symlink
+
 	if [ "$INCREASE_VERSION" == "Y" ] || [ "$INCREASE_VERSION" == "y" ]; then
 		IncreaseVersion
 	fi

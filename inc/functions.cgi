@@ -252,12 +252,20 @@ CreateSymlinks() {
 			OutputLog "Created parent directory: ${parent_dir#$build_dir_path/}"
 		fi
 
-		# Only remove existing symlink if it's actually a symlink
-		if [ -L "$symlink_path" ]; then
-			rm -f "$symlink_path"
+		# Rename existing path instead of deleting
+		if [ -e "$symlink_path" ] || [ -L "$symlink_path" ]; then
+			alt_path="${symlink_path}.alt"
+
+			# Remove existing .alt if present
+			if [ -e "$alt_path" ] || [ -L "$alt_path" ]; then
+				rm -rf "$alt_path"
+			fi
+
+			mv "$symlink_path" "$alt_path"
+			OutputLog "Renamed existing path to: ${item}.alt"
 		fi
 
-		# Create the symlink using an absolute or relative path
+		# Create the symlink using a relative path
 		rel_path=$(realpath --relative-to="$parent_dir" "$src_path")
 		ln -s "$rel_path" "$symlink_path"
 
