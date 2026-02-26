@@ -44,7 +44,6 @@ rsync -a \
 	--exclude ".git" \
 	--exclude "node_modules" \
 	--exclude "/vendor" \
-	--exclude ".env" \
 	--exclude "storage" \
 	--exclude "bootstrap/cache" \
 	"$build_dir_path/" "$TMP_DIR/" || {
