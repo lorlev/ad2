@@ -92,7 +92,7 @@ GetCommitsCount() {
 	case $platform in
 		"gitlab")
 			# GitLab logic
-			echo $(echo $post_payload | jq --arg branch "$GIT_BRANCH" '[.commits[] | select(.id != null)] | length')
+			echo $(echo "$post_payload" | jq --arg branch "$GIT_BRANCH" 'if (.ref | split("/")[-1]) == $branch then [.commits[] | select(.id != null)] | length else 0 end')
 			;;
 		"bitbucket")
 			# Bitbucket logic
