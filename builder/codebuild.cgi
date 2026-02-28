@@ -138,7 +138,15 @@ OutputLog "Downloading build artifacts from S3"
 SAFE_BUILD_ID=$(echo "$BUILD_ID" | tr -d '\r\n' | tr ':' '-')
 S3_BUILD_PATH="s3://${CODEBUILD_S3_BUCKET}/codebuild/builds/${SAFE_BUILD_ID}"
 
-CLEAN_LOCAL_DIR=$(echo "$build_dir_path/public/build" | tr -d '\r\n ' )
+SUBDIR="${CODEBUILD_TARGET_SUBDIR:-public/build}"
+
+if [ "$SUBDIR" = "." ] || [ -z "$SUBDIR" ]; then
+	DEST_PATH="$build_dir_path"
+else
+	DEST_PATH="$build_dir_path/$SUBDIR"
+fi
+
+CLEAN_LOCAL_DIR=$(echo "$DEST_PATH" | tr -d '\r\n ')
 
 mkdir -p "$CLEAN_LOCAL_DIR"
 cd "$CLEAN_LOCAL_DIR" || { OutputLog "ERROR: Cannot cd to $CLEAN_LOCAL_DIR"; exit 1; }
