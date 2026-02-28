@@ -40,7 +40,7 @@ OutputLog "Preparing source archive from $build_dir_path"
 
 mkdir -p "$TMP_DIR"
 
-rsync -a \
+rsync -aL \
 	--exclude ".git" \
 	--exclude "node_modules" \
 	--exclude "/vendor" \
