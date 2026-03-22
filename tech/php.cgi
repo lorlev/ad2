@@ -4,6 +4,12 @@
 
 type before_tech >/dev/null 2>&1 && before_tech
 
+phpSafe() {
+	env -i \
+		PATH=/usr/local/bin:/usr/bin:/bin \
+		/usr/bin/php "$@"
+}
+
 artisanSafe() {
 	env -i \
 		PATH=/usr/local/bin:/usr/bin:/bin \
@@ -23,6 +29,8 @@ if [ "$RUN_COMPOSER" == "Y" -o "$RUN_COMPOSER" == "y" ]; then
 		chmod -R 775 "$root_path/.composer"
 	fi
 
+	type before_composer >/dev/null 2>&1 && before_composer
+
 	/usr/bin/php \
 		-d allow_url_fopen=1 \
 		-d disable_functions= \
@@ -36,6 +44,8 @@ if [ "$RUN_COMPOSER" == "Y" -o "$RUN_COMPOSER" == "y" ]; then
 			--optimize-autoloader \
 			--no-dev \
 		&>> "$logs_dir/composer.output.log"
+
+	type after_composer >/dev/null 2>&1 && after_composer
 
 	OutputLog "Composer output writed in /composer.output.log"
 
